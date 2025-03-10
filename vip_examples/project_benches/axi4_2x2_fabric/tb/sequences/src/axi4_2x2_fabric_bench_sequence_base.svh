@@ -22,7 +22,7 @@
 
 class axi4_2x2_fabric_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
-  `uvm_object_utils( axi4_2x2_fabric_bench_sequence_base );
+  `uvm_object_utils( axi4_2x2_fabric_bench_sequence_base )
 
   // pragma uvmf custom sequences begin
   // Instantiate sequences here

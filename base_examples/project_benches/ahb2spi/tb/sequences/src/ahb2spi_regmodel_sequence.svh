@@ -33,7 +33,7 @@
 //
 class ahb2spi_regmodel_sequence extends ahb2spi_bench_sequence_base;
 
-  `uvm_object_utils( ahb2spi_regmodel_sequence );
+  `uvm_object_utils( ahb2spi_regmodel_sequence )
 
   //ahb_master_access_sequence ahb_master_access_s;
 

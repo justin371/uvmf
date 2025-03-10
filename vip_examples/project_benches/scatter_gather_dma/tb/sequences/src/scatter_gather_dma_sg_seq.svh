@@ -17,7 +17,7 @@
 
 class scatter_gather_dma_sg_seq extends scatter_gather_dma_cmd_base_seq;
 
-  `uvm_object_utils( scatter_gather_dma_sg_seq );
+  `uvm_object_utils( scatter_gather_dma_sg_seq )
 
   // pragma uvmf custom class_item_additional begin
   // pragma uvmf custom class_item_additional end

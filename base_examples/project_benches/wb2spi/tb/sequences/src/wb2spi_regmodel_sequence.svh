@@ -33,7 +33,7 @@
 //
 class wb2spi_regmodel_sequence extends wb2spi_bench_sequence_base;
 
-  `uvm_object_utils( wb2spi_regmodel_sequence );
+  `uvm_object_utils( wb2spi_regmodel_sequence )
 
   //wb_master_access_sequence wb_master_access_s;
   spi_mem_slave_seq  spi_mem_slave_s;

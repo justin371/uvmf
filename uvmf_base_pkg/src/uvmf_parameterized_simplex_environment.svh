@@ -99,7 +99,7 @@ class uvmf_parameterized_simplex_environment #(
      SCOREBOARD_T,
      USE_GPIO_AGENT,
      GPIO_AGENT_T
-  ) );
+  ) )
 
   // Instantiate the components
   INPUT_AGENT_T   in_agent;

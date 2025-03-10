@@ -17,7 +17,7 @@
 
 class gpio_example_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
-  `uvm_object_utils( gpio_example_bench_sequence_base );
+  `uvm_object_utils( gpio_example_bench_sequence_base )
 
   // pragma uvmf custom sequences begin
 typedef gpio_gpio_sequence #(.WRITE_PORT_WIDTH(32),.READ_PORT_WIDTH(16))  gpio_a_seq_t;

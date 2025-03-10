@@ -33,7 +33,7 @@
 //
 class alu_configuration extends uvmf_environment_configuration_base;
 
-  `uvm_object_utils( alu_configuration );
+  `uvm_object_utils( alu_configuration )
 
   alu_out_configuration alu_out_config;
   alu_in_configuration  alu_in_config;

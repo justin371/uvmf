@@ -16,7 +16,7 @@
 
 class register_test_sequence extends alu_bench_sequence_base;
 
-  `uvm_object_utils( register_test_sequence );
+  `uvm_object_utils( register_test_sequence )
 
 
   // pragma uvmf custom class_item_additional begin

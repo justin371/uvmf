@@ -17,7 +17,7 @@
 
 class alu_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
-  `uvm_object_utils( alu_bench_sequence_base );
+  `uvm_object_utils( alu_bench_sequence_base )
 
   // pragma uvmf custom sequences begin
     alu_in_random_sequence #(ALU_IN_OP_WIDTH) alu_in_random_s;

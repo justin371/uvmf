@@ -33,7 +33,7 @@
 //
 class example_derived_test_sequence #(int AXI4_ADDRESS_WIDTH = 32, int AXI4_RDATA_WIDTH = 32,int AXI4_WDATA_WIDTH = 32,int AXI4_ID_WIDTH = 8,int AXI4_USER_WIDTH = 2,int AXI4_REGION_MAP_SIZE = 16) extends qvip_axi4_bench_sequence_base #(AXI4_ADDRESS_WIDTH, AXI4_RDATA_WIDTH ,AXI4_WDATA_WIDTH ,AXI4_ID_WIDTH ,AXI4_USER_WIDTH ,AXI4_REGION_MAP_SIZE );
 
-  `uvm_object_utils( example_derived_test_sequence );
+  `uvm_object_utils( example_derived_test_sequence )
 
   function new(string name = "" );
     super.new(name);

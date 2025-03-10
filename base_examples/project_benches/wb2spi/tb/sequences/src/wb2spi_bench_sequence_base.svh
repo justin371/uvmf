@@ -17,7 +17,7 @@
 
 class wb2spi_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
-  `uvm_object_utils( wb2spi_bench_sequence_base );
+  `uvm_object_utils( wb2spi_bench_sequence_base )
 
   // pragma uvmf custom sequences begin
   // Instantiate sequences here

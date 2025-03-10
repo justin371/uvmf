@@ -17,7 +17,7 @@
 // $Revision: 4120 $
 //---------------------------------------------------------------------------
 class dpi_link_proxy extends uvm_object;
-   `uvm_object_utils(dpi_link_proxy);
+   `uvm_object_utils(dpi_link_proxy)
    
    dpi_link_event dpi_link_event_h;
    

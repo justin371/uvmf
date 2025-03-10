@@ -33,7 +33,7 @@ endfunction : trigger_named_event
 
 
 class dpi_link_event extends uvm_object;
-   `uvm_object_utils(dpi_link_event);
+   `uvm_object_utils(dpi_link_event)
 
    event  this_event;
    protected int ret_val;

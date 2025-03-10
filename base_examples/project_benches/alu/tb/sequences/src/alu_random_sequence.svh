@@ -39,7 +39,7 @@
 //
 class alu_random_sequence extends alu_sequence_base;
 
-  `uvm_object_utils( alu_random_sequence );
+  `uvm_object_utils( alu_random_sequence )
 
   alu_in_random_sequence alu_in_random_s;
 

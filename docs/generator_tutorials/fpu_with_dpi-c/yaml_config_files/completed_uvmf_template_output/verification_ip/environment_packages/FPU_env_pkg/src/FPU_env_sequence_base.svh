@@ -18,7 +18,7 @@
 //
 class FPU_env_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
-  `uvm_object_utils( FPU_env_sequence_base );
+  `uvm_object_utils( FPU_env_sequence_base )
 
   
   function new(string name = "" );

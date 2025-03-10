@@ -14,7 +14,7 @@
 //
 class ahb2spi_env_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
-  `uvm_object_utils( ahb2spi_env_sequence_base );
+  `uvm_object_utils( ahb2spi_env_sequence_base )
 
   // Handle to the environments register model
 // This handle needs to be set before use.

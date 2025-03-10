@@ -17,7 +17,7 @@
 
 class ahb2wb_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
-  `uvm_object_utils( ahb2wb_bench_sequence_base );
+  `uvm_object_utils( ahb2wb_bench_sequence_base )
 
   // pragma uvmf custom sequences begin
   // Instantiate sequences here

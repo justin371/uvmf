@@ -35,7 +35,7 @@
 //
 class alu_sequence_base extends uvm_sequence #(uvm_sequence_item);
 
-  `uvm_object_utils( alu_sequence_base );
+  `uvm_object_utils( alu_sequence_base )
 
   uvm_sequencer #(alu_in_transaction) alu_in_sequencer;
 

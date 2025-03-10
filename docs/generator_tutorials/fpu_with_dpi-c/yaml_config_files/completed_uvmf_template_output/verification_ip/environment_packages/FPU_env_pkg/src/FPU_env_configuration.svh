@@ -22,7 +22,7 @@
 class FPU_env_configuration 
 extends uvmf_environment_configuration_base;
 
-  `uvm_object_utils( FPU_env_configuration ); 
+  `uvm_object_utils( FPU_env_configuration )
 
 
 //Constraints for the configuration variables:

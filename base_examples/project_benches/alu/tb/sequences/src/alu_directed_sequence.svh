@@ -39,7 +39,7 @@
 //
 class alu_directed_sequence extends alu_bench_sequence_base;
 
-  `uvm_object_utils( alu_directed_sequence );
+  `uvm_object_utils( alu_directed_sequence )
 
   typedef alu_in_directed_sequence #(ALU_IN_OP_WIDTH) alu_in_s_t;
   alu_in_s_t alu_in_s;

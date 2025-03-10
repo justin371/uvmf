@@ -22,7 +22,7 @@
 
 class FPU_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
-  `uvm_object_utils( FPU_bench_sequence_base );
+  `uvm_object_utils( FPU_bench_sequence_base )
 
   // UVMF_CHANGE_ME : Instantiate, construct, and start sequences as needed to create stimulus scenarios.
 
