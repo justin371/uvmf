@@ -23,7 +23,7 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
                                         .ENV_T({{env_name}}_environment_t), 
                                         .TOP_LEVEL_SEQ_T({{name}}_bench_sequence_base));
 
-  `uvm_component_utils( test_top );
+  `uvm_component_utils( test_top )
 
 {% if useCoEmuClkRstGen %}
   //variable: clk_ctrl

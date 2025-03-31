@@ -1,0 +1,20 @@
+# Options applied to all Bazel invocations in the workspace.
+
+#default strategy
+build --spawn_strategy=local
+
+# Debug Options
+build --verbose_failures # print verbose failures
+build --color=yes
+# build -s
+# build --subcommands
+# build --sandbox_debug
+
+# These options ensure that Bazel prints *everything* it is doing as aggressively
+# as possible, but only updating once every second.
+build --show_timestamps
+build --show_progress_rate_limit=1
+
+#If true, Bazel tries to load external repositories from the Bzlmod system before looking into the WORKSPACE file
+## Enable Bzlmod for every Bazel command
+common --noenable_bzlmod

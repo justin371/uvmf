@@ -14,8 +14,8 @@
 
 module hvl_top;
 
-import uvm_pkg::*;
-import {{name}}_tests_pkg::*;
+  import uvm_pkg::*;
+  import {{name}}_tests_pkg::*;
 
   // pragma uvmf custom module_item_additional begin
   // pragma uvmf custom module_item_additional end
@@ -32,10 +32,17 @@ import {{name}}_tests_pkg::*;
 
 {% endfor %}
 
-  initial begin
-    $timeformat(-9,3,"ns",5);
-    run_test();
-  end
+  function pre_run_test();
+  // pragma uvmf custom pre_run_test begin
+  // pragma uvmf custom pre_run_test end
+  endfunction : pre_run_test
+
+  `include "cmn_tb_top.svh"
+
+  //initial begin
+  //  $timeformat(-9,3,"ns",5);
+  //  run_test();
+  //end
 
 endmodule
 
