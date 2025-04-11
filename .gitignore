@@ -1,3 +1,6 @@
 *~
 bazel*
 *.pyc
+docs/
+base_examples/
+vip_examples/
