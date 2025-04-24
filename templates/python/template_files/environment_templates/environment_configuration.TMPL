@@ -33,7 +33,7 @@ extends uvmf_environment_configuration_base;
 {% for regModel in regModels %}
 // Instantiate the register model
   {{regModel.regBlockClass}}  {{regModel.regBlockInstance}};
-{% endfor %}
+{% endfor -%}
 
   covergroup {{name}}_configuration_cg;
     // pragma uvmf custom covergroup begin
@@ -57,15 +57,15 @@ extends uvmf_environment_configuration_base;
 {% endfor -%}
 
 {% for sub_env in subEnvironments %}
-  string                {{sub_env.name}}_interface_names[];
-  uvmf_active_passive_t {{sub_env.name}}_interface_activity[];
+    string                {{sub_env.name}}_interface_names[];
+    uvmf_active_passive_t {{sub_env.name}}_interface_activity[];
 {% endfor -%}
 
 {% for sub_env in qvipSubEnvironments %}
-  {{sub_env.envPkg}}_env_configuration     {{sub_env.name}}_config;
-  string                                   {{sub_env.name}}_interface_names[];
-  uvmf_active_passive_t                    {{sub_env.name}}_interface_activity[];
-{% endfor %}
+    {{sub_env.envPkg}}_env_configuration     {{sub_env.name}}_config;
+    string                                   {{sub_env.name}}_interface_names[];
+    uvmf_active_passive_t                    {{sub_env.name}}_interface_activity[];
+{% endfor -%}
 
   typedef uvmf_virtual_sequencer_base #(.CONFIG_T({{name}}_env_configuration{{macro.paramUse(paramDefs)|indent(22)}})) {{name}}_vsqr_t;
   {{name}}_vsqr_t vsqr;
