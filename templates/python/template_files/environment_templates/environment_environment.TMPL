@@ -21,53 +21,54 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
   typedef {{sub_env.envPkg}}_environment{{macro.paramUseNested(sub_env.parameters)|indent(16)}} {{sub_env.name}}_t;
   {{sub_env.name}}_t {{sub_env.name}};
    
-{% endfor %}
+{% endfor -%}
 
 {% for sub_env in qvipSubEnvironments %}
   {{sub_env.envPkg}}_environment #()  {{sub_env.name}};
 
-{% endfor %}
+{% endfor -%}
 
 {% for ap in analysis_ports %}
   uvm_analysis_port #({{ap.tType}}) {{ap.name}};
-{% endfor %}
+{% endfor -%}
+
 {% for ep in analysis_exports %}
   uvm_analysis_export #({{ep.tType}}) {{ep.name}};
-{% endfor %}
+{% endfor -%}
 
 {% for agent in qvip_ap_names %}
   uvm_analysis_port #( mvc_sequence_item_base ) {{agent.name}}_{{agent.agent}}_ap [string];
-{% endfor %}
+{% endfor -%}
 
 {% for agent in agents %}
   typedef {{agent.ifPkg}}_agent {{macro.paramUseNested(agent.parameters)|indent(16)}} {{agent.name}}_t;
   {{agent.name}}_t {{agent.name}};
 
-{% endfor %}
+{% endfor -%}
 
 {% for nonUvmfComp in nonUvmfComponents %}
- typedef {{nonUvmfComp.type}} {{macro.paramUseNested(nonUvmfComp.parameters)|indent(16)}} {{nonUvmfComp.name}}_t;
-   {{nonUvmfComp.name}}_t {{nonUvmfComp.name}};
-{% endfor %}
+  typedef {{nonUvmfComp.type}} {{macro.paramUseNested(nonUvmfComp.parameters)|indent(16)}} {{nonUvmfComp.name}}_t;
+  {{nonUvmfComp.name}}_t {{nonUvmfComp.name}};
+{% endfor -%}
 
 {% for qvipMemAgent in qvipMemoryAgents %}
- typedef {{qvipMemAgent.type}} {{macro.paramUseNested(qvipMemAgent.parameters)|indent(16)}} {{qvipMemAgent.name}}_t;
-   {{qvipMemAgent.name}}_t {{qvipMemAgent.name}};
-{% endfor %}
+  typedef {{qvipMemAgent.type}} {{macro.paramUseNested(qvipMemAgent.parameters)|indent(16)}} {{qvipMemAgent.name}}_t;
+  {{qvipMemAgent.name}}_t {{qvipMemAgent.name}};
+{% endfor -%}
 
 {% for analysisComp in analysisComponents %}
   typedef {{analysisComp.type}} {{macro.paramUseNested(analysisComp.parameters)|indent(16)}} {{analysisComp.name}}_t;
   {{analysisComp.name}}_t {{analysisComp.name}};
-{% endfor %}
+{% endfor -%}
 
 {% for scoreboard in scoreboards %}
   typedef {{scoreboard.sType}} #(.T({{scoreboard.tType}}){% if scoreboard.parameters|length > 0 %},{% endif %}{% for param in scoreboard.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if scoreboard.parameters|length > 0 %}{% endif %})  {{scoreboard.name}}_t;
   {{scoreboard.name}}_t {{scoreboard.name}};
-{% endfor %}
+{% endfor -%}
 
 {% for c2eConn in c2eConnections %}
   uvm_analysis_port #({{c2eConn.tType}}) {{c2eConn.name}};
-{% endfor %}
+{% endfor -%}
 {% for regModel in regModels %}
 {% if regModel.adapterType != None %}
 {% if regModel.vipType == "qvip" %}
@@ -78,8 +79,8 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 // that contains the selected adapter.
 {% endif %}
    // Instantiate register model adapter and predictor
-   typedef {{regModel.adapterType}}    reg_adapter_t;
-   reg_adapter_t    reg_adapter;
+   typedef {{regModel.adapterType}} reg_adapter_t;
+   reg_adapter_t reg_adapter;
 {% endif %}
 {% if regModel.transactionType != None %}
 {% if regModel.vipType == "qvip" %}
@@ -88,11 +89,10 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 // type specified above.  Parameterize the uvm_reg_predictor to use this sequence item
 // type, including any parameters of the sequence item.
 {% endif %}
-   typedef uvm_reg_predictor #({{regModel.transactionType}}) reg_predictor_t;
-   reg_predictor_t    reg_predictor;
+  typedef uvm_reg_predictor #({{regModel.transactionType}}) reg_predictor_t;
+  reg_predictor_t reg_predictor;
 {% endif %}
 {% endfor %}
-
 
   typedef uvmf_virtual_sequencer_base #(.CONFIG_T({{name}}_env_configuration{{macro.paramUse(paramDefs)|indent(22)}})) {{name}}_vsqr_t;
   {{name}}_vsqr_t vsqr;
@@ -100,22 +100,28 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
   // pragma uvmf custom class_item_additional begin
   // pragma uvmf custom class_item_additional end
  
-// ****************************************************************************
-// FUNCTION : new()
-// This function is the standard SystemVerilog constructor.
-//
+  // ****************************************************************************
+  // FUNCTION : new()
+  // This function is the standard SystemVerilog constructor.
+
   function new( string name = "", uvm_component parent = null );
     super.new( name, parent );
   endfunction
 
-// ****************************************************************************
-// FUNCTION: build_phase()
-// This function builds all components within this environment.
-//
+  // ****************************************************************************
+  // FUNCTION: build_phase()
+  // This function builds all components within this environment.
+
   virtual function void build_phase(uvm_phase phase);
-// pragma uvmf custom build_phase_pre_super begin
-// pragma uvmf custom build_phase_pre_super end
+
+    // pragma uvmf custom build_phase_pre_super begin
+    // pragma uvmf custom build_phase_pre_super end
+
     super.build_phase(phase);
+
+    // pragma uvmf custom build_phase_config_db begin
+    // pragma uvmf custom build_phase_config_db end
+
 {% for sub_env in subEnvironments %}
     {{sub_env.name}} = {{sub_env.name}}_t::type_id::create("{{sub_env.name}}",this);
     {{sub_env.name}}.set_config(configuration.{{sub_env.name}}_config);
@@ -172,31 +178,33 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     // pragma uvmf custom build_phase end
   endfunction
 
-// ****************************************************************************
-// FUNCTION: connect_phase()
-// This function makes all connections within this environment.  Connections
-// typically inclue agent to predictor, predictor to scoreboard and scoreboard
-// to agent.
-//
+  // ****************************************************************************
+  // FUNCTION: connect_phase()
+  // This function makes all connections within this environment.  Connections
+  // typically inclue agent to predictor, predictor to scoreboard and scoreboard
+  // to agent.
+
   virtual function void connect_phase(uvm_phase phase);
-// pragma uvmf custom connect_phase_pre_super begin
-// pragma uvmf custom connect_phase_pre_super end
+
+    // pragma uvmf custom connect_phase_pre_super begin
+    // pragma uvmf custom connect_phase_pre_super end
+
     super.connect_phase(phase);
 {% for conn in connections %}
     {{conn.name}}.{{conn.pName}}.connect({{conn.subscriberName}}.{{conn.aeName}});
-{% endfor %}
+{% endfor -%}
 {% for agent in qvip_ap_names %}
      {{agent.name}}_{{agent.agent}}_ap = {{agent.name}}.{{agent.agent}}.ap; 
-{% endfor %}
+{% endfor -%}
 {% for connection in qvipConnections %}
     {{connection.output_component}}_ap["{{connection.output_port_name}}"].connect({{connection.input_component}}.{{connection.input_component_export_name}});
-{% endfor %}
+{% endfor -%}
 {% for sub_env in qvipSubEnvironments %}
 {% for agent in sub_env.agentList %}
     if ( configuration.{{sub_env.name}}_interface_activity[{{loop.index0}}] == ACTIVE )
        uvm_config_db #({{agent.sequencer}})::set(null,UVMF_SEQUENCERS,configuration.{{sub_env.name}}_interface_names[{{loop.index0}}],{{sub_env.name}}.{{agent.name}}.{% if agent.type == "qvip" %}m_{% endif %}sequencer  );
-{% endfor %}
-{% endfor %}
+{% endfor -%}
+{% endfor -%}
 {% for ap in analysis_ports %}
     {{ap.connection}}.connect({{ap.name}});
 {% endfor %}
@@ -210,11 +218,11 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     if (configuration.enable_reg_prediction ||
         configuration.enable_reg_adaptation)
 {% if regModel.vipType == "qvip" %}
-// UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP:
-// Uncomment the construction of the reg adapter below.  This was commented so that the 
-// generated code would compile and run as generated.  The uvm_reg_adapter is a virtual
-// class so it can not be constructed.  Once the type is changed to a QVIP reg adapter
-// type, it must be constructed.
+  // UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP:
+  // Uncomment the construction of the reg adapter below.  This was commented so that the 
+  // generated code would compile and run as generated.  The uvm_reg_adapter is a virtual
+  // class so it can not be constructed.  Once the type is changed to a QVIP reg adapter
+  // type, it must be constructed.
 {% endif %}
       {% if regModel.vipType == "qvip" %}//{% endif %}reg_adapter = new("reg_adapter");
     // Set sequencer and adapter in register model map
@@ -243,19 +251,21 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     // pragma uvmf custom reg_model_connect_phase end
   endfunction
 
-// ****************************************************************************
-// FUNCTION: end_of_simulation_phase()
-// This function is executed just prior to executing run_phase.  This function
-// was added to the environment to sample environment configuration settings
-// just before the simulation exits time 0.  The configuration structure is 
-// randomized in the build phase before the environment structure is constructed.
-// Configuration variables can be customized after randomization in the build_phase
-// of the extended test.
-// If a sequence modifies values in the configuration structure then the sequence is
-// responsible for sampling the covergroup in the configuration if required.
-//
+  // ****************************************************************************
+  // FUNCTION: end_of_simulation_phase()
+  // This function is executed just prior to executing run_phase.  This function
+  // was added to the environment to sample environment configuration settings
+  // just before the simulation exits time 0.  The configuration structure is 
+  // randomized in the build phase before the environment structure is constructed.
+  // Configuration variables can be customized after randomization in the build_phase
+  // of the extended test.
+  // If a sequence modifies values in the configuration structure then the sequence is
+  // responsible for sampling the covergroup in the configuration if required.
+
   virtual function void start_of_simulation_phase(uvm_phase phase);
      configuration.{{name}}_configuration_cg.sample();
+     // pragma uvmf custom start_of_simulation_phase begin
+     // pragma uvmf custom start_of_simulation_phase end
   endfunction
 
 endclass

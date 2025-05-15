@@ -26,9 +26,12 @@ class register_test extends test_top;
   virtual function void build_phase(uvm_phase phase);
     // The factory override below replaces the {{name}}_bench_sequence_base 
     // sequence with the register_test_sequence.
+
     {{name}}_bench_sequence_base::type_id::set_type_override(register_test_sequence::get_type());
+
     // Execute the build_phase of test_top AFTER all factory overrides have been created.
     super.build_phase(phase);
+
   endfunction
 
 {% if scoreboards|length > 0 %}

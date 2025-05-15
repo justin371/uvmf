@@ -54,16 +54,16 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
   endtask
 
   // ****************************************************************************
-  // TASK : pre_body()
+  // TASK : pre_start()
   // This task is called automatically when start is called with call_pre_post set to 1 (default).
-  // By calling get_responses() within pre_body() any derived sequences are automatically 
+  // By calling get_responses() within pre_start() any derived sequences are automatically 
   // processing response transactions. Only un-comment this call to get_responses() if you
   // have configured the interface driver to utilize the response transaction path by setting
   // the configuration variable "return_transaction_response" to 1. Otherwise it is possible
   // to impact runtime performance and memory utilization.
   //
-  virtual task pre_body();
-    // pragma uvmf custom pre_body begin
+  virtual task pre_start();
+    // pragma uvmf custom pre_start begin
 //    get_responses();
 {% if DPIImports|length > 0 %}
     // Example use of C functions using DPI-C
@@ -76,7 +76,7 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
 
             );
 {% endfor %} {% endif %}
-    // pragma uvmf custom pre_body end
+    // pragma uvmf custom pre_start end
   endtask
 
   // ****************************************************************************

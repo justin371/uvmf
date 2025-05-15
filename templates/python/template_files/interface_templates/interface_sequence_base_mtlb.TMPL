@@ -48,15 +48,15 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
   endtask
 
   // ****************************************************************************
-  // TASK : pre_body()
+  // TASK : pre_start()
   // This task is called automatically when start is called with call_pre_post set to 1 (default).
-  // By calling get_responses() within pre_body() any derived sequences are automatically 
+  // By calling get_responses() within pre_start() any derived sequences are automatically 
   // processing response transactions.
   //
-  virtual task pre_body();
-    // pragma uvmf custom pre_body begin
+  virtual task pre_start();
+    // pragma uvmf custom pre_start begin
     get_responses();
-    // pragma uvmf custom pre_body end
+    // pragma uvmf custom pre_start end
   endtask
 
   // ****************************************************************************

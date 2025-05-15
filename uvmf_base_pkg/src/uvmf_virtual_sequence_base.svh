@@ -49,18 +49,18 @@ class uvmf_virtual_sequence_base#(type CONFIG_T, type BASE_T = uvm_sequence #(.R
   endfunction
 
 // ****************************************************************************
-// TASK: pre_body()
-// When this sequence's start task is executed, the sequence's pre_body and 
-// post_body tasks are automatically called if the call_pre_post argument of 
+// TASK: pre_start()
+// When this sequence's start task is executed, the sequence's pre_start and 
+// post_start tasks are automatically called if the call_pre_post argument of 
 // start is set to 1. The default value for call_pre_post argument in start is 1.  
-// This pre_body task casts the m_sequencer, type uvm_sequencer_base, to the 
+// This pre_start task casts the m_sequencer, type uvm_sequencer_base, to the 
 // uvmf_virtual_sequencer_base type which includes a handle to the environments 
 // configuration object and the get_config method to retrieve a handle to the 
 // environment configuration.  The purpose of this task is to give the environment
 // level virtual sequence access to the environments configuration.  In addition 
 // to providing access to all environment configuration variables, the environment
 // configuration has a handle to each sequencer within and below the environment.
-  virtual task pre_body();
+  virtual task pre_start();
     if (m_sequencer != null) begin
       if($cast(vsqr,m_sequencer)) begin
         configuration = vsqr.get_config();

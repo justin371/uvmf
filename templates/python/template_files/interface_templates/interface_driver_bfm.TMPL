@@ -76,9 +76,19 @@ import {{name}}_pkg::*;
 import uvm_pkg::*;
 `include "uvm_macros.svh"
 initial begin : bfm_vs_agent_parameter_debug
-  `uvm_info("CFG", 
-      $psprintf("The BFM at '%m' has the following parameters: {% for param in paramDefs %}{{param.name}}=%x {% endfor %}", {% for param in paramDefs %}{{param.name}}{% if not loop.last %},{% endif %}{% endfor %}),
-      UVM_DEBUG)
+  `uvm_info("CFG",
+      {% if paramDefs %}  // Check if paramDefs is not empty
+        $psprintf("The BFM at '%m' has the following parameters: {% for param in paramDefs %}{{param.name}}=%x {% endfor %}", {% for param in paramDefs %}{{param.name}}{% if not loop.last %},{% endif %}{% endfor %})
+      {% else %} // paramDefs is empty
+        $psprintf("The BFM at '%m' has no parameters to display.") // Or simply the string without $psprintf
+        // Alternative without $psprintf if only %m was needed:
+        // $sformatf("The BFM at '%m' has no parameters to display.") // if you need %m resolved.
+        // Or even simpler if %m isn't strictly needed for the "no params" case, or handled by uvm_info itself:
+        // "The BFM has no parameters to display." (uvm_info will add path context)
+        // Best option for consistency:
+        // $psprintf("The BFM at '%m' has no parameters to display.")
+      {% endif %}
+      , UVM_DEBUG)
 end
 `endif
 

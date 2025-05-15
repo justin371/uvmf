@@ -34,12 +34,12 @@ class {{name}}_env_sequence_base #(
 // Handle to the environments register model
 // This handle needs to be set before use.
   {{regModel.regBlockClass}}  {{regModel.regBlockInstance}};
-{% endfor %}
+{% endfor -%}
 
 // This {{name}}_env_sequence_base contains a handle to a {{name}}_env_configuration object 
 // named configuration.  This configuration variable contains a handle to each 
 // sequencer within each agent within this environment and any sub-environments.
-// The configuration object handle is automatically assigned in the pre_body in the
+// The configuration object handle is automatically assigned in the pre_start in the
 // base class of this sequence.  The configuration handle is retrieved from the
 // virtual sequencer that this sequence is started on.
 // Available sequencer handles within the environment configuration:
@@ -49,28 +49,28 @@ class {{name}}_env_sequence_base #(
 {% if agent.initResp == "INITIATOR" %}
     // configuration.{{agent.name}}_config.sequencer
 {% endif %}
-{% endfor %}
+{% endfor -%}
 
   // Responder agent sequencers in {{name}}_environment:
 {% for agent in agents %}
 {% if agent.initResp == "RESPONDER" %}
     // configuration.{{agent.name}}_config.sequencer
 {% endif %}
-{% endfor %}
+{% endfor -%}
 
 {% if subEnvironments|length > 0 %}
   // Virtual sequencers in sub-environments located in sub-environment configuration
 {% for sub_env in subEnvironments %}
     // configuration.{{sub_env.name}}_config.vsqr
 {% endfor %}
-{% endif %}
+{% endif -%}
 
 {% for agent in agents %}{% if agent.initResp == "INITIATOR" %}
     typedef {{agent.ifPkg}}_random_sequence{{macro.paramUseNested(agent.parameters)|indent(16)}} {{agent.name}}_random_sequence_t;
     {{agent.name}}_random_sequence_t {{agent.name}}_rand_seq;
-{% endif %}
+{% endif -%}
 
-{% endfor %}
+{% endfor -%}
 
 // This example shows how to use the environment sequence base for sub-environments
 // It can only be used on environments generated with UVMF_2022.3 and later.
@@ -91,7 +91,7 @@ class {{name}}_env_sequence_base #(
 //         {{sub_env.name}}_sequence_base_t;
 // rand {{sub_env.name}}_sequence_base_t {{sub_env.name}}_seq;
 
-{% endfor %}
+{% endfor -%}
 
 
   // pragma uvmf custom class_item_additional begin
@@ -105,26 +105,34 @@ class {{name}}_env_sequence_base #(
 
 {% for sub_env in subEnvironments %}
 //     {{sub_env.name}}_seq = {{sub_env.name}}_sequence_base_t::type_id::create("{{sub_env.name}}_seq");
-{% endfor %}
+{% endfor -%}
 
+  // pragma uvmf custom new_additional begin
+  // pragma uvmf custom new_additional end
   endfunction
 
   virtual task body();
 
+  // pragma uvmf custom body_before begin
+  // pragma uvmf custom body_before end
+
   {% for regModel in regModels %}
-// Handle to the environments register model
-// This handle needs to be set before use.
+  // Handle to the environments register model
+  // This handle needs to be set before use.
   {{regModel.regBlockInstance}} = configuration.{{regModel.regBlockInstance}} ;
-{% endfor %}
+{% endfor -%}
 
 {% for agent in agents %}{% if agent.initResp == "INITIATOR" %}
     if ( configuration.{{agent.name}}_config.sequencer != null )
        repeat (25) {{agent.name}}_rand_seq.start(configuration.{{agent.name}}_config.sequencer);
-{% endif %}{% endfor %}
+{% endif %}{% endfor -%}
 
 {% for sub_env in subEnvironments %}
 //     {{sub_env.name}}_seq.start(configuration.{{sub_env.name}}_config.vsqr);
-{% endfor %}
+{% endfor -%}
+
+  // pragma uvmf custom body_end begin
+  // pragma uvmf custom body_end end
 
   endtask
 

@@ -52,10 +52,13 @@ package {{name}}_env_pkg;
   `uvm_analysis_imp_decl(_{{impdecl}})
 {% endfor %}
 
-  `include "{{src_dir}}{{name}}_env_typedefs.svh"
-
   // pragma uvmf custom package_imports_additional begin
   // pragma uvmf custom package_imports_additional end
+
+  `include "{{src_dir}}{{name}}_env_typedefs.svh"
+
+  // pragma uvmf custom package_include_additional begin
+  // pragma uvmf custom package_include_additional end
 
   // Parameters defined as HVL parameters
 {% for param in hvlPkgParamDefs %}

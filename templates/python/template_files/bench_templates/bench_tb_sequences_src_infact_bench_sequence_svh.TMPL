@@ -30,7 +30,7 @@ class infact_{{name}}_bench_sequence_base extends {{name}}_bench_sequence_base;
 {% endif %}{% endfor %}
   bit seq_cov_active[string];
 
-  virtual task pre_body();
+  virtual task pre_start();
 {% for bfm in bfms %}
 {% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
     {{bfm.name}}_gen = new({get_full_name(), "_{{bfm.name}}_gen"});

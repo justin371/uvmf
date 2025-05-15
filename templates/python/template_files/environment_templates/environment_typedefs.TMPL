@@ -16,10 +16,9 @@
 
 {% for types in typedefs %}
 typedef {{types.type}} {{types.name}};
-{% endfor %}
+{% endfor -%}
 
   // pragma uvmf custom additional begin
   // pragma uvmf custom additional end
 
 {% endblock %}
-~                

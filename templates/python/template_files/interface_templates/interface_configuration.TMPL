@@ -150,10 +150,17 @@ class {{name}}_configuration {{macro.paramDeclare(paramDefs)|indent(6)}} extends
 // Setting UVM_VERBOSITY to UVM_DEBUG causes all BFM's and all agents to display their parameter settings.
 // All of the messages from this feature have a UVM messaging id value of "CFG"
 // The transcript or run.log can be parsed to ensure BFM parameter settings match its corresponding agents parameter settings.
-    `uvm_info("CFG", 
-              $psprintf("The agent at '%s' is using interface named %s has the following parameters: {% for param in paramDefs %}{{param.name}}=%x {% endfor %}", agent_path, interface_name, {% for param in paramDefs %}{{param.name}} {% if not loop.last %},{% endif %}{% endfor %}),
-              UVM_DEBUG)
 
+    `uvm_info("CFG",
+          $psprintf("The agent at '%s' is using interface named %s has the following parameters:{% for param in paramDefs %} {{param.name}}=%x{% endfor %}",
+                    agent_path,
+                    interface_name
+                    {%- if paramDefs -%} // If paramDefs is not empty
+                    , // Only add this comma if there are parameters to list
+                    {% for param in paramDefs %}{{param.name}}{% if not loop.last %},{% endif %}{% endfor %}
+                    {%- endif -%} // End if paramDefs
+                   ),
+          UVM_DEBUG)
     // pragma uvmf custom initialize begin
     // This controls whether or not the agent returns a transaction handle in the driver when calling 
     // item_done() back into the sequencer or not. If set to 1, a transaction is sent back which means

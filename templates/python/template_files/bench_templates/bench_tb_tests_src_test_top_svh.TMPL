@@ -50,9 +50,9 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
 {% endif %}
 {% endfor %}
 
-};
+  };
 
-uvmf_active_passive_t interface_activities[] = { 
+  uvmf_active_passive_t interface_activities[] = { 
 {% for agent in resource_parameter_names %}
     {{agent.activity}} /* {{agent.agent_name}}     [{{loop.index-1}}] */ {% if not loop.last %}, 
 {% endif %}
@@ -78,7 +78,6 @@ uvmf_active_passive_t interface_activities[] = {
   function new( string name = "", uvm_component parent = null );
      super.new( name ,parent );
   endfunction
-
 
 {% if useCoEmuClkRstGen %}
   // ****************************************************************************
@@ -125,8 +124,10 @@ uvmf_active_passive_t interface_activities[] = {
   // executed which builds the agents.
   //
   virtual function void build_phase(uvm_phase phase);
-// pragma uvmf custom build_phase_pre_super begin
-// pragma uvmf custom build_phase_pre_super end
+
+  // pragma uvmf custom build_phase_pre_super begin
+  // pragma uvmf custom build_phase_pre_super end
+
     super.build_phase(phase);
 {% if bench_plusargs|length > 0 %}
     // Test for plusargs
@@ -144,6 +145,7 @@ uvmf_active_passive_t interface_activities[] = {
 {% endif %}{% endfor %}{% endif %}
     // pragma uvmf custom configuration_settings_post_randomize begin
     // pragma uvmf custom configuration_settings_post_randomize end
+
     configuration.initialize(NA, "uvm_test_top.environment", interface_names, null, interface_activities);
 {% if useCoEmuClkRstGen %}
     setup_clock_reset_controllers();
