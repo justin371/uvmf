@@ -185,14 +185,9 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
   // to agent.
 
   virtual function void connect_phase(uvm_phase phase);
-<<<<<<< HEAD
 
     // pragma uvmf custom connect_phase_pre_super begin
     // pragma uvmf custom connect_phase_pre_super end
-=======
-// pragma uvmf custom connect_phase_pre_super begin
-// pragma uvmf custom connect_phase_pre_super end
->>>>>>> d176b78 (Refactor the templates and base files to be more flexible)
 
     super.connect_phase(phase);
 {% for conn in connections %}
