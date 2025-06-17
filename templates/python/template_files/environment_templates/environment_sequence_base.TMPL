@@ -113,9 +113,6 @@ class {{name}}_env_sequence_base #(
 
   virtual task body();
 
-  // pragma uvmf custom body_before begin
-  // pragma uvmf custom body_before end
-
   {% for regModel in regModels %}
   // Handle to the environments register model
   // This handle needs to be set before use.
@@ -131,10 +128,16 @@ class {{name}}_env_sequence_base #(
 //     {{sub_env.name}}_seq.start(configuration.{{sub_env.name}}_config.vsqr);
 {% endfor -%}
 
-  // pragma uvmf custom body_end begin
-  // pragma uvmf custom body_end end
+  // pragma uvmf custom body begin
+  // pragma uvmf custom body end
 
   endtask
+
+  // pragma uvmf custom body_before begin
+  // pragma uvmf custom body_before end
+
+  // pragma uvmf custom body_end begin
+  // pragma uvmf custom body_end end
 
 endclass
 
