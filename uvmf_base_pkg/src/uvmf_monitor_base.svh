@@ -159,7 +159,7 @@ class uvmf_monitor_base #(
       trans.add_to_wave(transaction_viewing_stream);
      monitored_ap.write(trans);
 
-     `uvm_info("MON",trans.convert2string(),UVM_HIGH);
+     `uvm_info("MON",trans.convert2string(),UVM_DEBUG);
   endfunction
 
 // ****************************************************************************
