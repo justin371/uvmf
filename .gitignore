@@ -1,6 +1,7 @@
 *~
 bazel*
 *.pyc
+__pycache__/
 docs/
 base_examples/
 vip_examples/
