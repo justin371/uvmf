@@ -28,9 +28,6 @@ package {{name}}_tests_pkg;
 {% if use_bench_sequences %}
    import {{name}}_sequences_pkg::*;
 {% endif %}
-{% for agent in qvip_bfm_pkgs %}
-   import {{agent}}_pkg::*;
-{% endfor %}
 {% for ext_import in external_imports %}
    import {{ext_import}}::*;
 {% endfor %}

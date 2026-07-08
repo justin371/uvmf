@@ -28,9 +28,6 @@ package {{name}}_tests_pkg;
    import {{name}}_parameters_pkg::*;
    import {{env_name}}_env_pkg::*;
    import {{name}}_sequences_pkg::*;
-{% for agent in qvip_bfm_pkgs %}
-   import {{agent}}_pkg::*;
-{% endfor %}
 {% for ext_import in external_imports %}
    import {{ext_import}}::*;
 {% endfor %}
