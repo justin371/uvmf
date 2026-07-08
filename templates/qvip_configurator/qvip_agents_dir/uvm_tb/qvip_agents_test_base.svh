@@ -1,13 +1,13 @@
-//
+
 // File: qvip_agents_test_base.svh
-//
+
 // Generated from Mentor VIP Configurator (20200402)
 // Generated using Mentor VIP Library ( 2020.2 : 04/19/2020:18:58 )
-//
+
 class qvip_agents_test_base extends uvm_test;
     `uvm_component_utils(qvip_agents_test_base)
     // QVIP Configuration objects = As defined in the qvip_agents_params_pkg
-    
+
     pcie_ep_cfg_t pcie_ep_cfg;
     axi4_master_0_cfg_t axi4_master_0_cfg;
     axi4_master_1_cfg_t axi4_master_1_cfg;
@@ -15,7 +15,7 @@ class qvip_agents_test_base extends uvm_test;
     apb3_config_master_cfg_t apb3_config_master_cfg;
     // Environment configuration object
     qvip_agents_env_config env_cfg;
-    
+
     // Environment component
     qvip_agents_env env;
     function new
@@ -25,22 +25,22 @@ class qvip_agents_test_base extends uvm_test;
     );
         super.new(name, parent);
     endfunction
-    
+
     extern function void init_vseq
     (
         qvip_agents_vseq_base vseq
     );
-    
+
     extern function void build_phase
     (
         uvm_phase phase
     );
-    
+
     extern task run_phase
     (
         uvm_phase phase
     );
-    
+
 endclass: qvip_agents_test_base
 
 function void qvip_agents_test_base::init_vseq
@@ -60,7 +60,7 @@ function void qvip_agents_test_base::build_phase
 );
     env_cfg = qvip_agents_env_config::type_id::create("env_cfg");
     env_cfg.initialize();
-    
+
     pcie_ep_cfg = pcie_ep_cfg_t::type_id::create("pcie_ep_cfg" );
     if ( !uvm_config_db #(pcie_ep_bfm_t)::get(this, "", "pcie_ep", pcie_ep_cfg.m_bfm) )
     begin
@@ -96,7 +96,7 @@ function void qvip_agents_test_base::build_phase
     end
     apb3_config_master_config_policy::configure(apb3_config_master_cfg, env_cfg.block_c_addr_map);
     env_cfg.apb3_config_master_cfg = apb3_config_master_cfg;
-    
+
     // Once the agent configuration objects are done build the env
     env = qvip_agents_env::type_id::create("env", this);
     env.cfg = env_cfg;
@@ -123,18 +123,17 @@ task qvip_agents_test_base::run_phase
         factory.print();
         `uvm_fatal(get_type_name(), {"Virtual sequence '",sequence_name,"' not found in factory"})
     end
-    
+
     if ( !$cast(vseq, obj) )
     begin
         `uvm_fatal(get_type_name(), {"Virtual sequence '",sequence_name,"' is not derived from qvip_agents_vseq_base"})
     end
-    
+
     //The sequence is OK to run
     `uvm_info(get_type_name(), {"Running virtual sequence '",sequence_name,"'"}, UVM_LOW)
-    
+
     phase.raise_objection(this);
     init_vseq(vseq);
     vseq.start(null);
     phase.drop_objection(this);
 endtask: run_phase
-

@@ -1,18 +1,18 @@
-//
+
 // File: apb3_config_master_config_policy.sv
-//
+
 // Generated from Mentor VIP Configurator (20200402)
 // Generated using Mentor VIP Library ( 2020.2 : 04/19/2020:18:58 )
-//
+
 class apb3_config_master_config_policy;
     static function void configure
     (
         input apb3_config_master_cfg_t cfg,
         input address_map addrm
     );
-        //
+
         // Agent setup configurations:
-        //
+
         cfg.agent_cfg.is_active = 1;
         cfg.agent_cfg.agent_type = mgc_apb3_v1_0_pkg::APB_MASTER;
         // APB interface type
@@ -46,23 +46,22 @@ class apb3_config_master_config_policy;
         cfg.agent_cfg.en_logger.clk_mon = 0;
         // Enable generic payload adapter
         cfg.agent_cfg.en_rw_adapter = 1'b0;
-        //
+
         // VIP Config setup configurations:
-        //
+
         if ( addrm != null )
         begin
             cfg.addr_map = addrm;
         end
-        //
+
         // BFM setup configurations at default value:
         //    cfg.m_bfm.config_enable_all_assertions = 2'h3;
         //    cfg.m_bfm.config_enable_assertion = 35'h7FFFFFFFF;
         //    cfg.m_bfm.config_en_recom_check = 1'b0;
         //    cfg.m_bfm.config_response_max_timeout = 500;
         //    cfg.m_bfm.check_addr_map = APB_CHK_LEGAL;
-        //
-        
-    endfunction: configure
-    
-endclass: apb3_config_master_config_policy
 
+
+    endfunction: configure
+
+endclass: apb3_config_master_config_policy

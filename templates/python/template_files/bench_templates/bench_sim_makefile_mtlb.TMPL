@@ -6,7 +6,7 @@
 # Generated for MTLB flow
 #
 #----------------------------------------------------------------------
-#                                          
+#
 # DESCRIPTION: This makefile includes the shared makefile and contains
 #   bench level make targets.
 #
@@ -78,7 +78,7 @@ TEST_NAME            ?= test_top
 {% endif %}
 
 TEST_SEED            ?= random
-UVM_CLI_ARGS         = 
+UVM_CLI_ARGS         =
 
 # Usage of Veloce, etc. to be input by the user (subject to defaults)
 USE_VELOCE          ?= 0
@@ -130,7 +130,7 @@ INFACT_VLOG_ARGS_1 += +incdir+./infact_genfiles +define+INFACT_ENABLE_COMPILE
 INFACT_VLOG_ARGS = $(INFACT_VLOG_ARGS_$(USE_INFACT))
 
 # When running inFact, bring in the inFact sequences package
-INFACT_VOPT_ARGS_0 = 
+INFACT_VOPT_ARGS_0 =
 INFACT_VOPT_ARGS_1 += {{name}}_infact_sequences_pkg
 INFACT_VOPT_ARGS = $(INFACT_VOPT_ARGS_$(USE_INFACT))
 
@@ -148,10 +148,10 @@ COMMON_VSIM_ARGS      +=   -sv_lib sv_lib
 {% endif %}
 
 # Add to default compile/load/run arguments
-VCOM_ARGS             += 
+VCOM_ARGS             +=
 
 # Note: vsim-3009 error can be eliminated by adding -timescale 1ps/1ps to VLOG_ARGS
-VLOG_ARGS             +=  -timescale 1ps/1ps 
+VLOG_ARGS             +=  -timescale 1ps/1ps
 
 VLOG_ARGS             += $(UVM_DISABLE_FILE_LINE_CMD)
 
@@ -162,8 +162,8 @@ BATCH_VOPT_ARGS       +=
 DEBUG_VOPT_ARGS       +=
 EXTRA_VOPT_TOPS       += {% if additionalTops|length > 0 %} {% for top in additionalTops %}{{top}} {% endfor %}{% endif %}
 
-COMMON_VSIM_ARGS      += {% if qvip_bfm_pkgs|length > 0 %} -mvchome $(QUESTA_MVC_HOME) {% endif %} 
-COMMON_VSIM_ARGS      += {% if svLibNames|length > 0 %} {% for svLibName in svLibNames %} -sv_lib {{svLibName}} {% endfor %} {% endif %} 
+COMMON_VSIM_ARGS      += {% if qvip_bfm_pkgs|length > 0 %} -mvchome $(QUESTA_MVC_HOME) {% endif %}
+COMMON_VSIM_ARGS      += {% if svLibNames|length > 0 %} {% for svLibName in svLibNames %} -sv_lib {{svLibName}} {% endfor %} {% endif %}
 COMMON_VSIM_ARGS      += +notimingchecks +nospecify
 
 {% if inFactEnabled %}
@@ -173,11 +173,11 @@ DEBUG_VOPT_ARGS       += $(INFACT_VOPT_ARGS)
 {% endif %}
 
 BATCH_VSIM_ARGS       += #-uvmcontrol=none
-DEBUG_VSIM_ARGS       += 
-EXTRA_VSIM_TOPS       += 
+DEBUG_VSIM_ARGS       +=
+EXTRA_VSIM_TOPS       +=
 
 {% if vmaps|length > 0 %}
-create_{{name}}_vmaps: 
+create_{{name}}_vmaps:
 {% for vmap in vmaps %}
 	vmap {{vmap.name}} {{vmap.dirName}}
 {% endfor %}
@@ -227,7 +227,7 @@ q_comp_{{name}}_parameters_pkg:
 
 v_comp_{{name}}_parameters_pkg: q_comp_{{name}}_parameters_pkg
 	$(HDL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/parameters $({{name}}_PARAMETERS_PKG)
- 
+
 
 comp_{{name}}_sequence_pkg:
 	$(HVL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/sequences $({{name}}_SEQUENCES_PKG)
@@ -237,12 +237,12 @@ comp_{{name}}_tests_pkg:
 
 # pragma uvmf custom dut_compile_make_target begin
 # UVMF_CHANGE_ME : Add make target to compile your verilog dut here
-comp_{{name}}_verilog_dut: 
+comp_{{name}}_verilog_dut:
 	echo "Compile your verilog DUT here"
 	$(HDL_COMP_CMD) $({{name}}_VERILOG_DUT) -l vlog.log
 
 # UVMF_CHANGE_ME : Add make target to compile your vhdl dut here
-comp_{{name}}_vhdl_dut: 
+comp_{{name}}_vhdl_dut:
 	echo "Compile your vhdl DUT here"
 	$(HDL_COMP_CMD_VHDL) $({{name}}_VHDL_DUT) -l vcom.log
 
@@ -251,7 +251,7 @@ comp_{{name}}_dut: comp_{{name}}_vhdl_dut comp_{{name}}_verilog_dut
 # pragma uvmf custom dut_compile_make_target end
 
 {% if qvip_bfm_pkgs|length > 0 %}
-comp_qvip: 
+comp_qvip:
 {% endif %}
 {% for qvip_env_vars in qvip_pkg_env_variables %}
 	$(HVL_COMP_CMD) +incdir+$(QUESTA_MVC_HOME)/questa_mvc_{{src_dir}}sv/ -f $({{qvip_env_vars}}_DIR_NAME)/{{qvip_bfm_pkgs[loop.index-1]}}_filelist.f
@@ -271,7 +271,7 @@ COMP_DEPS = \
 {% if bfm.activity == 'ACTIVE' %}
   $(COMP_{{bfm}}_PKG_DEPS) \
 {% endif %}
-{% endfor %} 
+{% endfor %}
 
 # Default coverage strategy files for interface packages
 {% for bfm in bfms %}
@@ -284,7 +284,7 @@ INFACT_COVERAGE_STRATEGIES += $({{bfm.name}}_INFACT_COVERAGE_STRATEGY)
 # QSO options for each interface package
 {% for bfm in bfms %}
 {% if bfm.activity == 'ACTIVE' %}
-{{bfm.name}}_INFACT_QSO_OPTIONS ?= 
+{{bfm.name}}_INFACT_QSO_OPTIONS ?=
 {% endif %}
 {% endfor %}
 
@@ -323,13 +323,13 @@ dpiheader.h:
 	$(HDL_COMP_CMD) {% for bfm in bfm_pkgs %}$({{bfm}}_PKG_HDL) $({{bfm}}_PKG) {% endfor %} -dpiheader dpiheader.h -suppress 2275
 
 sv_lib.so:	{% for bfm in bfm_pkgs %}{{bfm}}_tc.o {% endfor %} uvmf_tc.o dpi_link.o dpiheader.h
-	${GPP}  uvmf_tc.o {% for bfm in bfm_pkgs %}{{bfm}}_tc.o {% endfor %} dpi_link.o -shared -o sv_lib.so 
+	${GPP}  uvmf_tc.o {% for bfm in bfm_pkgs %}{{bfm}}_tc.o {% endfor %} dpi_link.o -shared -o sv_lib.so
 {% endif %}
 
 comp_hvl_core : {% if qvip_bfm_pkgs|length > 0 %} comp_qvip comp_qvip_utils_pkg {% endif %} {% if useCoEmuClkRstGen %} comp_co_emulation_clock_pkg comp_co_emulation_reset_pkg comp_co_emulation_memload_pkg {% endif %} \
 	{% for bfm in bfm_pkgs %} comp_{{bfm}}_pkg {% endfor %} \
 	comp_{{env_name}}_env_pkg \
-	comp_{{name}}_parameters_pkg comp_{{name}}_sequence_pkg comp_{{name}}_tests_pkg 
+	comp_{{name}}_parameters_pkg comp_{{name}}_sequence_pkg comp_{{name}}_tests_pkg
 
 comp_uvmf_core : comp_uvm_pkg comp_uvmf_base_pkg {% if useDpiLink %} comp_dpi_link_pkg {% endif %}
 
@@ -354,5 +354,3 @@ clean::
 {% endif %}
 
 {% endblock %}
-
-

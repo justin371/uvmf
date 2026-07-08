@@ -1,16 +1,16 @@
-{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}test_top.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}test_top.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
 // Description: This top level UVM test is the base class for all
 //     future tests created for this project.
-//
+
 //     This test class contains:
 //          Configuration:  The top level configuration for the project.
 //          Environment:    The top level environment for the project.
 //          Top_level_sequence:  The top level sequence for the project.
-//                                        
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -18,10 +18,20 @@
 
 typedef {{env_name}}_env_configuration {{macro.paramUseNested(envParamDefs)|indent(8)}}{{env_name}}_env_configuration_t;
 typedef {{env_name}}_environment {{macro.paramUseNested(envParamDefs)|indent(8)}}{{env_name}}_environment_t;
+{% if not use_bench_sequences %}
+typedef {{env_name}}_env_sequence_base #(
+                                        .CONFIG_T({{env_name}}_env_configuration_t),
+                                        .ENV_T({{env_name}}_environment_t)
+                                        ) {{env_name}}_env_sequence_base_t;
+{% endif %}
 
-class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration_t), 
-                                        .ENV_T({{env_name}}_environment_t), 
+class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration_t),
+                                        .ENV_T({{env_name}}_environment_t),
+{% if use_bench_sequences %}
                                         .TOP_LEVEL_SEQ_T({{name}}_bench_sequence_base));
+{% else %}
+                                        .TOP_LEVEL_SEQ_T({{env_name}}_env_sequence_base_t));
+{% endif %}
 
   `uvm_component_utils( test_top )
 
@@ -32,7 +42,7 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
   // bfm is set here.  Usage elsewhere in testbench can just use a
   // clock_ctrl_base handle.
   clock_ctrl #(INIT_CLOCK_HALF_PERIOD) clk_ctrl;
-  
+
   //variable: reset_ctrl
   //Reset Proxy Object used to control Reset
   // Must be extended reset_ctrl object and not reset_ctrl_base because bfm
@@ -46,15 +56,15 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
 
   string interface_names[] = {
 {% for agent in resource_parameter_names %}
-    {{agent.unique_id_with_underscores}}{{agent.name}} /* {{agent.agent_name}}     [{{loop.index-1}}] */ {% if not loop.last %}, 
+    {{agent.unique_id_with_underscores}}{{agent.name}} /* {{agent.agent_name}}     [{{loop.index-1}}] */ {% if not loop.last %},
 {% endif %}
 {% endfor %}
 
   };
 
-  uvmf_active_passive_t interface_activities[] = { 
+  uvmf_active_passive_t interface_activities[] = {
 {% for agent in resource_parameter_names %}
-    {{agent.activity}} /* {{agent.agent_name}}     [{{loop.index-1}}] */ {% if not loop.last %}, 
+    {{agent.activity}} /* {{agent.agent_name}}     [{{loop.index-1}}] */ {% if not loop.last %},
 {% endif %}
 {% endfor %}
   };
@@ -72,9 +82,9 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
 
   // ****************************************************************************
   // FUNCTION: new()
-  // This is the standard systemVerilog constructor.  All components are 
+  // This is the standard systemVerilog constructor.  All components are
   // constructed in the build_phase to allow factory overriding.
-  //
+
   function new( string name = "", uvm_component parent = null );
      super.new( name ,parent );
   endfunction
@@ -82,8 +92,8 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
 {% if useCoEmuClkRstGen %}
   // ****************************************************************************
   // FUNCTION: setup_clock_reset_controllers()
-  // 
-  //
+
+
   function void setup_clock_reset_controllers();
     virtual clock_bfm #(INIT_CLOCK_HALF_PERIOD) clk_bfm;
     virtual sync_reset_bfm #(RST_POLARITY,
@@ -117,12 +127,12 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
   // The construction of the configuration and environment classes is done in
   // the build_phase of uvmf_test_base.  Once the configuraton and environment
   // classes are built then the initialize call is made to perform the
-  // following: 
+  // following:
   //     Monitor and driver BFM virtual interface handle passing into agents
   //     Set the active/passive state for each agent
   // Once this build_phase completes, the build_phase of the environment is
   // executed which builds the agents.
-  //
+
   virtual function void build_phase(uvm_phase phase);
 
   // pragma uvmf custom build_phase_pre_super begin
@@ -151,6 +161,21 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
     setup_clock_reset_controllers();
 {% endif %}
   endfunction
+
+{% if not use_bench_sequences %}
+  // ****************************************************************************
+  // TASK: run_phase()
+  // Start the environment-level virtual sequence on the environment virtual
+  // sequencer. Tests can override {{env_name}}_env_sequence_base_t to select
+  // a scenario without generating a bench-level sequence package.
+
+  virtual task run_phase( uvm_phase phase );
+    phase.raise_objection(this, "Objection raised by test_top");
+    `uvm_info("CFG", configuration.convert2string(), UVM_HIGH);
+    top_level_sequence.start(environment.vsqr);
+    phase.drop_objection(this, "Objection dropped by test_top");
+  endtask
+{% endif %}
 
 endclass
 

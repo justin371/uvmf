@@ -15,7 +15,7 @@
 # If no repeat count is given, default is 1
 # pragma uvmf custom tb_info begin
 {% if useBCR %}
-TB_INFO {{name}} { } { }  
+TB_INFO {{name}} { } { }
 {% else %}
 TB_INFO {{name}} { UVMF_VIP_LIBRARY_HOME=../../../../../{{relative_vip_from_sim}} UVMF_PROJECT_DIR=../../../../../../../{{name}} } { {% if svLibNames|length > 0 %}{% for svLibName in svLibNames %} -sv_lib ../../build_task/{{svLibName}}{% endfor %}{% endif %} }
 {% endif %}
@@ -30,4 +30,3 @@ TEST infact_test_base 3
 
 
 {% endblock %}
-

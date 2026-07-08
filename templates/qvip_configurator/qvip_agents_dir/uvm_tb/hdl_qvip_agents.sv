@@ -1,9 +1,9 @@
-//
+
 // File: hdl_qvip_agents.sv
-//
+
 // Generated from Mentor VIP Configurator (20200402)
 // Generated using Mentor VIP Library ( 2020.2 : 04/19/2020:18:58 )
-//
+
 module hdl_qvip_agents;
     import uvm_pkg::*;
     import qvip_agents_params_pkg::*;
@@ -158,8 +158,8 @@ module hdl_qvip_agents;
     wire [apb3_config_master_params::APB3_PRDATA_BIT_WIDTH-1:0]     apb3_config_master_PRDATA;
     wire                                                            apb3_config_master_PREADY;
     wire                                                            apb3_config_master_PSLVERR;
-    
-    pcie_ep_serial 
+
+    pcie_ep_serial
     #(
         .LANES(pcie_ep_params::LANES),
         .PIPE_BYTES_MAX(pcie_ep_params::PIPE_BYTES_MAX),
@@ -181,8 +181,8 @@ module hdl_qvip_agents;
         .wake_up_n(pcie_ep_wake_up_n),
         .clk_jitter(pcie_ep_clk_jitter)
     );
-    
-    axi4_master 
+
+    axi4_master
     #(
         .ADDR_WIDTH(axi4_master_0_params::AXI4_ADDRESS_WIDTH),
         .RDATA_WIDTH(axi4_master_0_params::AXI4_RDATA_WIDTH),
@@ -242,8 +242,8 @@ module hdl_qvip_agents;
         .BUSER(axi4_master_0_BUSER),
         .BREADY(axi4_master_0_BREADY)
     );
-    
-    axi4_master 
+
+    axi4_master
     #(
         .ADDR_WIDTH(axi4_master_1_params::AXI4_ADDRESS_WIDTH),
         .RDATA_WIDTH(axi4_master_1_params::AXI4_RDATA_WIDTH),
@@ -303,8 +303,8 @@ module hdl_qvip_agents;
         .BUSER(axi4_master_1_BUSER),
         .BREADY(axi4_master_1_BREADY)
     );
-    
-    axi4_slave 
+
+    axi4_slave
     #(
         .ADDR_WIDTH(axi4_slave_params::AXI4_ADDRESS_WIDTH),
         .RDATA_WIDTH(axi4_slave_params::AXI4_RDATA_WIDTH),
@@ -364,8 +364,8 @@ module hdl_qvip_agents;
         .BUSER(axi4_slave_BUSER),
         .BREADY(axi4_slave_BREADY)
     );
-    
-    apb_master 
+
+    apb_master
     #(
         .SLAVE_COUNT(apb3_config_master_params::APB3_SLAVE_COUNT),
         .ADDR_WIDTH(apb3_config_master_params::APB3_PADDR_BIT_WIDTH),

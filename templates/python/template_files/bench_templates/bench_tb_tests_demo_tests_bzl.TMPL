@@ -1,0 +1,9 @@
+{% set fname = "{{bench_location}}/{{name}}/tb/tests/demo_tests.bzl" %}
+load("@rules_verilog//verilog:defs.bzl", "verilog_dv_test_cfg")
+
+def demo_test_configs():
+    verilog_dv_test_cfg(
+        name = "demo",
+        inherits = [":base"],
+        uvm_testname = "test_top",
+    )

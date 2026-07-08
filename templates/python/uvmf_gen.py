@@ -28,9 +28,9 @@
 ##
 ##############################################################################
 ##
-##   This module facilitates the creation of UVMF interface packages, 
+##   This module facilitates the creation of UVMF interface packages,
 ##   environment packages and testbench packages through the use of Jinja2-
-##   based template files.  
+##   based template files.
 ##
 ##   See templates.README for more information on usage
 ##
@@ -42,6 +42,8 @@ import re
 import inspect
 import sys
 import stat
+import tempfile
+import getpass
 from optparse import (OptionParser,BadOptionError,AmbiguousOptionError,SUPPRESS_HELP)
 from fnmatch import fnmatch
 from shutil import copyfile
@@ -50,8 +52,25 @@ from uvmf_version import version
 
 __version__ = version
 
+SVH_KEEP_SUFFIXES = (
+  '_macros.svh',
+  '_macros_mtlb.svh',
+  '_typedefs.svh',
+  '_typedefs_hdl.svh',
+  '_env_typedefs.svh',
+  '_imports.svh',
+  '_gen.svh',
+)
+
+SVH_EXTERNAL_KEEP_NAMES = (
+  'uvm_macros.svh',
+  'mcd_macros.svh',
+  'cmn_tb_top.svh',
+  'tb_defines.svh',
+  'uvm_tlm_target_socket_decl.svh',
+)
+
 #if (sys.version_info[0] < 3):
-#  sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/python/python2");
 
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python");
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python3");
@@ -205,13 +224,22 @@ class BaseElementEnvironmentClass(BaseElementClass):
 class UVMFCommandLineParser:
   def __init__(self,version=None,usage=None):
     self.parser = PassThroughOptionParser(version=version,usage=usage)
-    self.parser.add_option("-c","--clean",dest="clean",action="store_true",help="Clean up generated code instead of generate code")
+    self.parser.add_option("-c","--clean",dest="clean",action="store_true",help="Remove only explicitly approved obsolete outputs instead of generating code")
     self.parser.add_option("-q","--quiet",dest="quiet",action="store_true",help="Suppress output while running",default=False)
     self.parser.add_option("-d","--dest_dir",dest="dest_dir",action="store",type="string",help="Override destination directory.  Default is \"$CWD/uvmf_template_output\"",default="./uvmf_template_output")
     self.parser.add_option("-t","--template_dir",dest="template_dir",action="store",type="string",help="Override which template directory to utilize.  Default is relative to location of uvmf_gen.py file")
     self.parser.add_option("-o","--overwrite",dest="overwrite",action="store_true",help="Overwrite existing output files (default is to skip)",default=False)
     self.parser.add_option("-b","--debug",dest="debug",action="store_true",help=SUPPRESS_HELP,default=False)
     self.parser.add_option("-y","--yaml",dest="yaml",action="store_true",help="Dump YAML file instead of generate code",default=False)
+    self.parser.add_option("--target_profile",dest="target_profile",action="store",type="string",help="Apply output policy for a target DV profile. Default: vcs_xcelium_synopsys_vip. Use legacy for upstream-style full output.",default="vcs_xcelium_synopsys_vip")
+    self.parser.add_option("--minimal_output",dest="minimal_output",action="store_true",help="Skip local bench simulation, RTL stub, docs, and legacy filelist metadata outputs",default=False)
+    self.parser.add_option("--skip_bench_sim",dest="skip_bench_sim",action="store_true",help="Skip generation of project_benches/<bench>/sim outputs",default=False)
+    self.parser.add_option("--skip_bench_rtl",dest="skip_bench_rtl",action="store_true",help="Skip generation of project_benches/<bench>/rtl DUT stub outputs",default=False)
+    self.parser.add_option("--skip_bench_docs",dest="skip_bench_docs",action="store_true",help="Skip generation of project_benches/<bench>/docs outputs",default=False)
+    self.parser.add_option("--skip_legacy_filelists",dest="skip_legacy_filelists",action="store_true",help="Skip generated .F, .vcompile, .vinfo, .compile, and .f filelist metadata outputs",default=False)
+    self.parser.add_option("--skip_questa_scripts",dest="skip_questa_scripts",action="store_true",help="Skip generated Questa compile.do scripts",default=False)
+    self.parser.add_option("--skip_ide_metadata",dest="skip_ide_metadata",action="store_true",help="Skip generated Eclipse/SVEditor .project and .svproject metadata",default=False)
+    self.parser.add_option("--with_bench_sequences",dest="with_bench_sequences",action="store_true",help="Generate legacy bench-level virtual sequence package and example sequence tests",default=False)
 
 ## Base class for the generator types, this is where the create method is defined.
 class BaseGeneratorClass(BaseElementClass):
@@ -219,6 +247,322 @@ class BaseGeneratorClass(BaseElementClass):
     super(BaseGeneratorClass,self).__init__(name)
     self.gen_type = gen_type
     self.conditional_array = []
+
+  def skipTemplateOutput(self,fname):
+    """Return True when command-line options request that this output be skipped."""
+    options = getattr(self,'options',None)
+    if options == None:
+      return False
+    target_profile = getattr(options,'target_profile','')
+    target_profile = target_profile.lower().replace('-','_')
+    vcs_xcelium_synopsys_vip = target_profile in ['vcs_xcelium_synopsys_vip']
+    minimal_output = getattr(options,'minimal_output',False) or vcs_xcelium_synopsys_vip
+    skip_bench_sim = minimal_output or getattr(options,'skip_bench_sim',False)
+    skip_bench_rtl = minimal_output or getattr(options,'skip_bench_rtl',False)
+    skip_bench_docs = minimal_output or getattr(options,'skip_bench_docs',False)
+    skip_legacy_filelists = minimal_output or getattr(options,'skip_legacy_filelists',False)
+    skip_questa_scripts = vcs_xcelium_synopsys_vip or getattr(options,'skip_questa_scripts',False)
+    skip_ide_metadata = vcs_xcelium_synopsys_vip or getattr(options,'skip_ide_metadata',False)
+    skip_bench_sequences = vcs_xcelium_synopsys_vip and not getattr(options,'with_bench_sequences',False)
+    norm_fname = fname.replace('\\','/')
+    bench_prefix = self.bench_location+'/'+self.name+'/'
+    if self.gen_type == 'bench':
+      if skip_bench_sim and norm_fname.startswith(bench_prefix+'sim/'):
+        return True
+      if skip_bench_rtl and norm_fname.startswith(bench_prefix+'rtl/'):
+        return True
+      if skip_bench_docs and norm_fname.startswith(bench_prefix+'docs/'):
+        return True
+      if skip_bench_sequences and norm_fname.startswith(bench_prefix+'tb/sequences/'):
+        return True
+      if skip_bench_sequences and os.path.splitext(os.path.basename(norm_fname))[0] in ['register_test','example_derived_test']:
+        return True
+    if skip_legacy_filelists:
+      for suffix in ['.F','.vcompile','.vinfo','.compile','.f']:
+        if norm_fname.endswith(suffix):
+          return True
+    if skip_questa_scripts and norm_fname.endswith('/compile.do'):
+      return True
+    if vcs_xcelium_synopsys_vip and self.isApprovedObsoleteGeneratedMakefile(norm_fname):
+      return True
+    if skip_ide_metadata and os.path.basename(norm_fname) in ['.project','.svproject']:
+      return True
+    return False
+
+  def keepGeneratedSvh(self,path):
+    """Keep .svh only for header-like generated files."""
+    extension = os.path.splitext(path)[1].lower()
+    if extension != '.svh':
+      return False
+    basename = os.path.basename(path).lower()
+    return basename.endswith(SVH_KEEP_SUFFIXES)
+
+  def preferredGeneratedPath(self,path):
+    """Default generated source files to .sv unless they are header-like."""
+    if self.keepGeneratedSvh(path):
+      return path
+    root,extension = os.path.splitext(path)
+    if extension.lower() == '.svh':
+      return root+'.sv'
+    return path
+
+  def keepReferencedSvh(self,path):
+    """Preserve external and header-style .svh references inside generated content."""
+    extension = os.path.splitext(path)[1].lower()
+    if extension != '.svh':
+      return False
+    if self.keepGeneratedSvh(path):
+      return True
+    basename = os.path.basename(path).lower()
+    if basename in SVH_EXTERNAL_KEEP_NAMES:
+      return True
+    stem = os.path.splitext(os.path.basename(path))[0].lower()
+    if stem.startswith('dpi_link_'):
+      return True
+    return False
+
+  def fileLooksGenerated(self,path):
+    """Best-effort check that a stale file is UVMF-generated, not user-authored."""
+    try:
+      with open(path,'r',encoding='utf-8') as handle:
+        prefix = handle.read(512)
+    except (OSError,UnicodeDecodeError):
+      return False
+    if "Created with uvmf_gen version" in prefix:
+      return True
+    stem = os.path.splitext(os.path.basename(path))[0]
+    old_guard = '_'+re.sub(r'[^A-Za-z0-9]+','_',stem).upper()+'__SVH__'
+    return ('`ifndef '+old_guard) in prefix
+
+  def isApprovedObsoleteGeneratedSvh(self,path):
+    """Remove only stale generated .svh files that now have a .sv replacement."""
+    norm_path = path.replace('\\','/')
+    if not norm_path.endswith('.svh'):
+      return False
+    if self.keepGeneratedSvh(norm_path):
+      return False
+    replacement = os.path.splitext(path)[0]+'.sv'
+    if not os.path.isfile(replacement):
+      return False
+    return self.fileLooksGenerated(path)
+
+  def rewriteGeneratedSvhReferences(self,content):
+    """Keep local generated references aligned with the default .sv output policy."""
+    if '.svh' not in content:
+      return content
+    def replace(match):
+      path = match.group(0)
+      if self.keepReferencedSvh(path):
+        return path
+      return os.path.splitext(path)[0]+'.sv'
+    return re.sub(r'[A-Za-z0-9_./{}-]+\.svh\b',replace,content)
+
+  def isApprovedObsoleteGeneratedMakefile(self,path):
+    """Match only UVMF-generated Makefiles that are safe to skip or clean."""
+    norm_path = path.replace('\\','/')
+    if norm_path.endswith('/sim/Makefile') or norm_path.endswith('/sim/Makefile_mtlb'):
+      return True
+    if norm_path.endswith('_pkg/Makefile') or norm_path.endswith('_env_pkg/Makefile'):
+      return True
+    return False
+
+  def normalizeGeneratedSource(self,fname,content):
+    """Apply low-risk lint cleanup to generated SV/Verilog source files."""
+    if not fname.lower().endswith(('.sv','.svh','.v','.vh','.svp','.vp')):
+      return content
+    content = self.rewriteGeneratedSvhReferences(content)
+    normalized_lines = []
+    for line in content.replace('\t','  ').splitlines():
+      normalized_lines.append(line.rstrip())
+    normalized = '\n'.join(normalized_lines)
+    if content.endswith('\n') or content.endswith('\r\n'):
+      normalized += '\n'
+    normalized = self.stripCallableBannerComments(normalized)
+    normalized = self.labelNamedEndKeywords(normalized)
+    return self.addIncludeGuard(fname,normalized)
+
+  def stripCallableBannerComments(self,content):
+    """Remove generated FUNCTION/TASK banners that only restate the declaration."""
+    lines = content.splitlines(True)
+    output = []
+    index = 0
+    while index < len(lines):
+      if not re.match(r'^\s*//\s*\*{10,}\s*$',lines[index]):
+        output.append(lines[index])
+        index += 1
+        continue
+      end = index+1
+      has_callable_label = False
+      while end < len(lines):
+        stripped = lines[end].strip()
+        if stripped and not stripped.startswith('//'):
+          break
+        has_callable_label = has_callable_label or bool(
+          re.match(r'^//\s*(?:FUNCTION|TASK)\s*:',stripped)
+        )
+        end += 1
+      if has_callable_label:
+        index = end
+        continue
+      output.append(lines[index])
+      index += 1
+    return ''.join(output)
+
+  def addIncludeGuard(self,fname,content):
+    extension = os.path.splitext(fname)[1].lower()
+    if extension not in ('.sv','.svh'):
+      return content
+    stem = os.path.splitext(os.path.basename(fname))[0]
+    guard = '_'+re.sub(r'[^A-Za-z0-9]+','_',stem).upper()+'__'+extension[1:].upper()+'__'
+    if re.search(r'^\s*`ifndef\s+'+re.escape(guard)+r'\s*$',content,re.MULTILINE):
+      return content
+    return '`ifndef {0}\n`define {0}\n\n{1}\n`endif // {0}\n'.format(guard,content.rstrip())
+
+  def labelNamedEndKeywords(self,content):
+    """Add labels to named SystemVerilog construct terminators."""
+    patterns = (
+      ('endclass',r'^\s*(?:virtual\s+)?class\s+(?:automatic\s+)?([A-Za-z_]\w*)'),
+      ('endpackage',r'^\s*package(?:\s+automatic)?\s+([A-Za-z_]\w*)'),
+      ('endmodule',r'^\s*module(?:\s+automatic)?\s+([A-Za-z_]\w*)'),
+      ('endinterface',r'^\s*interface(?:\s+automatic)?\s+([A-Za-z_]\w*)'),
+      ('endprogram',r'^\s*program(?:\s+automatic)?\s+([A-Za-z_]\w*)'),
+      ('endgroup',r'^\s*covergroup\s+([A-Za-z_]\w*)'),
+      ('endproperty',r'^\s*property\s+([A-Za-z_]\w*)'),
+      ('endsequence',r'^\s*sequence\s+([A-Za-z_]\w*)'),
+      ('endclocking',r'^\s*clocking\s+([A-Za-z_]\w*)'),
+      ('endchecker',r'^\s*checker\s+([A-Za-z_]\w*)'),
+    )
+    stacks = {keyword:[] for keyword,pattern in patterns}
+    stacks['endfunction'] = []
+    stacks['endtask'] = []
+    lines = []
+    in_block_comment = False
+
+    for line in content.splitlines():
+      code = line
+      if in_block_comment:
+        if '*/' not in code:
+          lines.append(line)
+          continue
+        code = code.split('*/',1)[1]
+        in_block_comment = False
+      code = code.split('//',1)[0]
+      while '/*' in code:
+        before,after = code.split('/*',1)
+        if '*/' in after:
+          code = before+after.split('*/',1)[1]
+        else:
+          code = before
+          in_block_comment = True
+          break
+
+      for keyword,pattern in patterns:
+        match = re.match(pattern,code)
+        if match:
+          stacks[keyword].append(match.group(1))
+
+      callable_match = re.search(r'\b(function|task)\b',code)
+      if callable_match and not re.search(r'\b(extern|pure)\b',code[:callable_match.start()]):
+        kind = callable_match.group(1)
+        declaration = code[callable_match.end():]
+        names = re.findall(r'([A-Za-z_]\w*)\s*\(',declaration)
+        if names:
+          stacks['end'+kind].append(names[0])
+        else:
+          declaration = declaration.split(';',1)[0]
+          identifiers = re.findall(r'[A-Za-z_]\w*',declaration)
+          if identifiers:
+            stacks['end'+kind].append(identifiers[-1])
+
+      for keyword,stack in stacks.items():
+        if re.search(r'\b'+keyword+r'\b',code):
+          if stack:
+            name = stack.pop()
+            if not re.search(r'\b'+keyword+r'\b\s*:',code):
+              line = re.sub(r'\b'+keyword+r'\b',keyword+' : '+name,line,count=1)
+          break
+      lines.append(line)
+
+    return '\n'.join(lines)+('\n' if content.endswith('\n') else '')
+
+  def pathIsWithinRoot(self,path):
+    """Return True only when path resolves inside the configured output root."""
+    root = os.path.realpath(self.root)
+    candidate = os.path.realpath(path)
+    try:
+      return os.path.commonpath([root,candidate]) == root
+    except ValueError:
+      return False
+
+  def cleanupApprovedOutputs(self):
+    """Remove only outputs explicitly approved as obsolete for this repository."""
+    removed_files = 0
+    removed_dirs = 0
+
+    if self.gen_type == 'bench':
+      bench_root = os.path.join(self.root,self.bench_location,self.name)
+      obsolete_dirs = [
+        os.path.join(bench_root,'sim'),
+        os.path.join(bench_root,'rtl'),
+        os.path.join(bench_root,'docs'),
+        os.path.join(bench_root,'tb','sequences'),
+      ]
+      for path in obsolete_dirs:
+        if not self.pathIsWithinRoot(path):
+          raise UserError("Refusing cleanup outside destination root: "+path)
+        if os.path.isdir(path):
+          if self.options.quiet != True:
+            print("Removing approved obsolete directory "+path)
+          import shutil
+          shutil.rmtree(path)
+          removed_dirs += 1
+
+      obsolete_tests = [
+        os.path.join(bench_root,'tb','tests','src','register_test.svh'),
+        os.path.join(bench_root,'tb','tests','src','register_test.sv'),
+        os.path.join(bench_root,'tb','tests','src','example_derived_test.svh'),
+        os.path.join(bench_root,'tb','tests','src','example_derived_test.sv'),
+      ]
+      for path in obsolete_tests:
+        if not self.pathIsWithinRoot(path):
+          raise UserError("Refusing cleanup outside destination root: "+path)
+        if os.path.isfile(path) or os.path.islink(path):
+          if self.options.quiet != True:
+            print("Removing approved obsolete file "+path)
+          os.remove(path)
+          removed_files += 1
+
+    obsolete_suffixes = ('.F','.vcompile','.vinfo','.compile','.f')
+    obsolete_names = ('compile.do','.project','.svproject')
+    for dirpath,dirnames,filenames in os.walk(self.root):
+      for filename in filenames:
+        path = os.path.join(dirpath,filename)
+        norm_path = path.replace('\\','/')
+        if filename.endswith(obsolete_suffixes) or filename in obsolete_names or self.isApprovedObsoleteGeneratedMakefile(norm_path) or self.isApprovedObsoleteGeneratedSvh(path):
+          if self.options.quiet != True:
+            print("Removing approved obsolete file "+path)
+          os.remove(path)
+          removed_files += 1
+
+    if self.options.quiet != True:
+      print("Approved cleanup removed {0} file(s) and {1} directory tree(s)".format(removed_files,removed_dirs))
+
+  def writeOutputAtomically(self,full,content,isExecutable=False):
+    """Commit a complete generated file without truncating an existing file first."""
+    dirpath = os.path.dirname(full)
+    fd,tmp = tempfile.mkstemp(prefix='.'+os.path.basename(full)+'.',suffix='.uvmf_tmp',dir=dirpath,text=True)
+    try:
+      with os.fdopen(fd,'w') as fh:
+        fh.write(content)
+      if os.path.exists(full):
+        os.chmod(tmp,stat.S_IMODE(os.stat(full).st_mode))
+      if isExecutable:
+        st = os.stat(tmp)
+        os.chmod(tmp,st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+      os.replace(tmp,full)
+    finally:
+      if os.path.exists(tmp):
+        os.remove(tmp)
 
   def runTemplate(self,template_str,desired_conditional="",ExtraTemplateVars={}):
     """Generate a particular template.  Return early without doing anything if desired_conditional
@@ -246,7 +590,9 @@ class BaseGeneratorClass(BaseElementClass):
                                            "relative_bench_from_cwd": self.relative_bench_from_cwd,
                                            "relative_environment_from_cwd": self.relative_environment_from_cwd,
                                            "relative_interface_from_cwd": self.relative_interface_from_cwd,
-                                         })
+                                            "use_bench_sequences": (getattr(self.options,'target_profile','').lower().replace('-','_') != 'vcs_xcelium_synopsys_vip') or getattr(self.options,'with_bench_sequences',False),
+                                            "legacy_profile": getattr(self.options,'target_profile','').lower().replace('-','_') == 'legacy',
+                                          })
     templateVars.update(ExtraTemplateVars)
     ## Do any necessary search/replace operations within the fname variable
     try:
@@ -260,12 +606,15 @@ class BaseGeneratorClass(BaseElementClass):
         # names starting with certain letters can wind up looking like escape sequences
         # that the regexp parser. So far, I'm aware of "\g"
         if (key != 'root_dir'):
-          fname = re.sub('\{\{'+key+'\}\}',templateVars[key],fname)
+          fname = re.sub(r'\{\{'+key+r'\}\}',templateVars[key],fname)
+    fname = self.preferredGeneratedPath(fname)
+    if self.skipTemplateOutput(fname):
+      return
     ## Conditional template consideration. Two possible ways to control things. The 'desired_conditional'
     ## function input is used as an explicit mechanism to produce a particular template file output from
     ## a higher level. The 'conditional_array' class variable is more general and can be used to turn certain groups of
-    ## template outputs on or off in a wider sense. Both are compared against a 'conditional' entry in 
-    ## the given template file.  If the 'conditional' entry is empty then the output will be produced. 
+    ## template outputs on or off in a wider sense. Both are compared against a 'conditional' entry in
+    ## the given template file.  If the 'conditional' entry is empty then the output will be produced.
     ## Otherwise, the entry is compared against both the 'desired_conditional' input as well as any entries
     ## in the 'conditional_array' list. If 'desired_conditional' is set here then there *must* be a match
     ## against the field in the TMPL file in order to generate output. If 'conditional_array' entries exist
@@ -287,41 +636,33 @@ class BaseGeneratorClass(BaseElementClass):
         return
     ## If we got here it means that we will be producing output
     full = os.path.abspath(os.path.join(self.root,fname))
+    if not self.pathIsWithinRoot(full):
+      raise UserError("Refusing template output outside destination root: "+full)
     dirpath = os.path.dirname(full)
     try:
-      symlink = os.path.abspath(os.path.expandvars(re.sub('\{\{name\}\}',self.name,template.module.symlink)))
+      symlink = os.path.abspath(os.path.expandvars(re.sub(r'\{\{name\}\}',self.name,template.module.symlink)))
       ## For a symbolic link, "fname" represents the symbolink link name and
       ##   "symlink" represents the source
-      if (self.options.clean == True):
+      if (os.path.exists(full) & (self.options.overwrite == False)):
         if (self.options.quiet != True):
-          print("Removing symbolic link "+full)
-        if (dirpath not in self.cleanupdirs):
-          re.sub('\{\{name\}\}',self.name,template.module.symlink)
-          self.cleanupdirs.append(dirpath)
-        try:
-          os.remove(full)
-        except OSError:
-          pass
+          print("Skipping symbolic link "+symlink+", already exists")
       else:
-        if (os.path.exists(full) & (self.options.overwrite == False)):
-          if (self.options.quiet != True):
-            print("Skipping symbolic link "+symlink+", already exists")
-        else:
-          if (self.options.quiet != True):
-            print("Creating symbolic link "+full+" pointing to "+symlink)
-          if (os.path.exists(dirpath) == False):
-            os.makedirs(dirpath)
-          # os.symlink will fail if the file already exists, so delete it first.  Dangerous but the only
-          # way to get here in that case is to have thrown the --overwrite switch so assume user knows
-          # the risks.
-          if (os.path.exists(full)):
-            os.remove(full)
+        if (self.options.quiet != True):
+          print("Creating symbolic link "+full+" pointing to "+symlink)
+        if (os.path.exists(dirpath) == False):
+          os.makedirs(dirpath)
+        fd,tmp = tempfile.mkstemp(prefix='.'+os.path.basename(full)+'.',suffix='.uvmf_tmp',dir=dirpath)
+        os.close(fd)
+        os.remove(tmp)
+        try:
           if (os.name == 'nt'):
-            ## On Windows, symbolic links are difficult to create in all scenarios,
-            ## just copy over the file instead
-            copyfile(symlink,full)
-          else:  
-            os.symlink(symlink,full)
+            copyfile(symlink,tmp)
+          else:
+            os.symlink(symlink,tmp)
+          os.replace(tmp,full)
+        finally:
+          if os.path.lexists(tmp):
+            os.remove(tmp)
       return
     except AttributeError:
      isSymlink = False
@@ -329,34 +670,20 @@ class BaseGeneratorClass(BaseElementClass):
       isExecutable = template.module.isExecutable
     except AttributeError:
       isExecutable = False
-    if (self.options.clean == True):
+    if (os.path.exists(full) & os.path.isfile(full) & (self.options.overwrite == False)):
       if (self.options.quiet != True):
-        print("Removing "+full)
-      if (dirpath not in self.cleanupdirs):
-        self.cleanupdirs.append(dirpath)
-      try:
-        os.remove(full)
-      except OSError:
-        pass
+        print("Skipping "+full+", already exists")
     else:
-      if (os.path.exists(full) & os.path.isfile(full) & (self.options.overwrite == False)):
-        if (self.options.quiet != True):
-          print("Skipping "+full+", already exists")
-      else:
-        if (self.options.quiet != True):
-          print("Generating "+full)
-        if (os.path.exists(dirpath) == False):
-          os.makedirs(dirpath)
-        fh = open(full,'w')
-        fh.write(template.render(templateVars))
-        fh.close()
-        if (isExecutable):
-          st = os.stat(full)
-          os.chmod(full,st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+      if (self.options.quiet != True):
+        print("Generating "+full)
+      if (os.path.exists(dirpath) == False):
+        os.makedirs(dirpath)
+      content = self.normalizeGeneratedSource(fname,template.render(templateVars))
+      self.writeOutputAtomically(full,content,isExecutable)
 
   def create(self,desired_template='all',parser=None,archive_yaml=True):
     """This exists across all generator classes and will initiate the creation of all files associated
-    with the given object type.  Command-line are also availale in any script that calls this 
+    with the given object type.  Command-line are also availale in any script that calls this
     function, use the --help switch for details."""
     if (parser==None):
       parser = UVMFCommandLineParser(version=__version__)
@@ -371,11 +698,7 @@ class BaseGeneratorClass(BaseElementClass):
         for d in dumper.util_data:
           uvmf_yaml.YAMLGenerator(d,self.name+"_util_comp_"+list(d['uvmf']['util_components'].keys())[0]+".yaml")
       return
-    # Use USER for Linux or USERNAME for Windows
-    if (os.name == 'nt'):
-      self.user = os.environ["USERNAME"]
-    else:
-      self.user = os.environ["USER"]
+    self.user = getpass.getuser()
     lt = time.localtime()
     self.year = time.strftime("%Y",lt)
     self.date = time.strftime("%Y %b %d",lt)
@@ -391,6 +714,9 @@ class BaseGeneratorClass(BaseElementClass):
       # Default location is current working directory plus 'uvmf_template_output'
       dest_dir = "uvmf_template_output"
       self.root = os.path.join(os.getcwd(),"uvmf_template_output")
+    if (self.options.clean == True):
+      self.cleanupApprovedOutputs()
+      return
     # Determine location of template files. Default is a relataive location of this file, ./template_files.
     # If an environment variable UVMF_TEMPLATE_PATH is set, use these paths to find the necessary
     # source.
@@ -401,17 +727,16 @@ class BaseGeneratorClass(BaseElementClass):
     if (os.path.isdir(template_path) == False):
       raise UserError("Specified path \""+template_path+"\" to template directory not valid")
     extra_paths = []
-    try: 
-      extra_paths = os.environ['UVMF_TEMPLATE_PATH'].split(":")
+    try:
+      extra_paths = os.environ['UVMF_TEMPLATE_PATH'].split(os.pathsep)
     except:
       pass
     paths = []
     for p in extra_paths+[template_path]:
       paths.append(os.path.join(p,self.template_ext_dir))
       paths.append(os.path.join(p,'base_templates'))
-    templateLoader = FileSystemFilterLoader(searchpath=paths,glob='*.TMPL') 
+    templateLoader = FileSystemFilterLoader(searchpath=paths,glob='*.TMPL')
     self.templateEnv = jinja2.Environment(loader = templateLoader,trim_blocks=True)
-    self.cleanupdirs = []
     if (desired_template == 'all'):
       templates = self.templateEnv.list_templates()
       if (len(templates) == 0):
@@ -449,20 +774,6 @@ class BaseGeneratorClass(BaseElementClass):
           fn = ap+"/"+self.name+"_util_comp_"+list(d['uvmf']['util_components'].keys())[0]+".yaml"
           if ((self.options.overwrite == True) | (os.path.exists(fn) == False)):
             uvmf_yaml.YAMLGenerator(d,fn)
-    if (self.options.clean == True):
-      cwd = os.getcwd();
-      os.chdir(self.root)
-      for dir in self.cleanupdirs:
-        try:
-          if (os.path.exists(dir)):
-            (dir,num) = re.subn(self.root+"/","",dir)
-            if (num > 0):
-              if (self.options.quiet != True):
-                print("Removing directory "+dir)
-              os.removedirs(dir)
-        except OSError:
-          pass
-      os.chdir(cwd)
 
 ## Extensions from base element class for direct use in generators
 class PortClockClass(BaseElementInterfaceClass):
@@ -497,7 +808,7 @@ class PortClass(BaseElementInterfaceClass):
   def calc_width_string(self,width):
     try:
       w = int(width)
-    except ValueError: 
+    except ValueError:
       w = width
       pass
     if w == 1:
@@ -524,11 +835,11 @@ class TypeClass(BaseElementClass):
     super(TypeClass,self).__init__(name)
     self.type = type
 
-class ParamDef(BaseElementClass):       
-  def __init__(self,name,type,value): 
-    super(ParamDef,self).__init__(name)  
-    self.type = type              
-    self.value = value 
+class ParamDef(BaseElementClass):
+  def __init__(self,name,type,value):
+    super(ParamDef,self).__init__(name)
+    self.type = type
+    self.value = value
 
 class TransClass(BaseElementInterfaceClass):
   def __init__(self,name,type,isrand=False,iscompare=True,unpackedDim="",comment=""):
@@ -668,12 +979,13 @@ class StringInterfaceNamesClass(BaseElementClass):
     self.unique_id_with_underscores = unique_id_with_underscores
 
 class SubEnvironmentClass(BaseElementClass):
-  def __init__(self,name,envPkg,numAgents,agent_index,parametersDict,regModelPkg,regBlockClass,regBlockInstance):
+  def __init__(self,name,envPkg,numAgents,agent_index,parametersDict,regModelPkg,regBlockClass,regBlockInstance,baseAddress=None):
     super(SubEnvironmentClass,self).__init__(name)
     self.envPkg = envPkg
     self.regModelPkg = regModelPkg
     self.regBlockClass = regBlockClass
     self.regBlockInstance = regBlockInstance
+    self.baseAddress = baseAddress
     self.numAgents = numAgents
     self.agentMinIndex = agent_index
     self.agentMaxIndex = agent_index+numAgents-1
@@ -772,7 +1084,7 @@ class connectionClass(BaseElementClass):
 
 class InterfaceClass(BaseGeneratorClass):
   """Use this class to produce files associated with a particular interface or agent package"""
-  
+
   def __init__(self,name):
     super(InterfaceClass,self).__init__(name,'interface')
     self.template_ext_dir = 'interface_templates'
@@ -1025,21 +1337,29 @@ class EnvironmentClass(BaseGeneratorClass):
     template['regModels'] = self.regModels;
     template['nonUvmfComponents'] = self.nonUvmfComponents
     template['qvipMemoryAgents'] = self.qvipMemoryAgents
+    template['vipMemoryAgents'] = self.qvipMemoryAgents
     template['agents'] = self.agents
     template['qvip_agents'] = self.qvip_agents
+    template['vip_agents'] = self.qvip_agents
     template['external_imports'] = self.external_imports
     template['paramDefs'] = self.paramDefs
     template['configVariableValues'] = self.configVariableValues
     template['hvlPkgParamDefs'] = self.hvlPkgParamDefs
     template['subEnvironments'] = self.subEnvironments
+    template['hasAddressedSubmodels'] = any(subenv.regModelPkg is not None and subenv.baseAddress is not None for subenv in self.subEnvironments)
     template['subEnvironmentRegPackages'] = self.subEnvironmentRegPackages
     template['qvipSubEnvironments'] = self.qvipSubEnvironments
+    template['vipSubEnvironments'] = self.qvipSubEnvironments
     template['qvipConnections'] = self.qvipConnections
+    template['vipConnections'] = self.qvipConnections
     template['qvip_ap_names'] = self.qvip_ap_names
+    template['vip_ap_names'] = self.qvip_ap_names
     template['agent_pkgs'] = self.agent_packages
     template['qvip_agent_pkgs'] = self.qvip_agent_packages
+    template['vip_agent_pkgs'] = self.qvip_agent_packages
     template['env_pkgs'] = self.sub_env_packages
     template['qvip_env_pkgs'] = self.qvip_sub_env_packages
+    template['vip_env_pkgs'] = self.qvip_sub_env_packages
     template['analysisComponents'] = self.analysisComponents
     template['acTypes'] = self.acTypes
     template['scoreboards'] = self.scoreboards
@@ -1082,6 +1402,9 @@ class EnvironmentClass(BaseGeneratorClass):
     """Add an agent instantiation to the definition of this environment class"""
     self.qvipMemoryAgents.append(QvipMemoryAgentClass(name,type,qvipEnv,parametersDict))
 
+  def addVipMemoryAgent(self,name,type,vipEnv,parametersDict={}):
+    self.addQvipMemoryAgent(name,type,vipEnv,parametersDict)
+
   def addAgent(self,name,ifPkg,clk,rst,parametersDict={},initResp='INITIATOR'):
     """Add an agent instantiation to the definition of this environment class"""
     self.agents.append(AgentClass(name,ifPkg,clk,rst,self.agentIndex,parametersDict,initResp))
@@ -1089,13 +1412,13 @@ class EnvironmentClass(BaseGeneratorClass):
     if (ifPkg not in self.agent_packages):
       self.agent_packages.append(ifPkg)
 
-  def addSubEnv(self,name,envPkg,numAgents,parametersDict={}, regModelPkg=None,regBlockClass=None,regBlockInstance=''):
+  def addSubEnv(self,name,envPkg,numAgents,parametersDict={},regModelPkg=None,regBlockClass=None,regBlockInstance='',baseAddress=None):
     if ( regBlockInstance == ''):
       regBlkInst = name+"_rm"
     else:
       regBlkInst = regBlockInstance
     """Add a sub environment instantiation to the definition of this environment class"""
-    self.subEnvironments.append(SubEnvironmentClass(name,envPkg,numAgents,self.agentIndex,parametersDict,regModelPkg,regBlockClass,regBlkInst))
+    self.subEnvironments.append(SubEnvironmentClass(name,envPkg,numAgents,self.agentIndex,parametersDict,regModelPkg,regBlockClass,regBlkInst,baseAddress))
     self.agentIndex = self.agentIndex+numAgents
     if (envPkg not in self.sub_env_packages):
       self.sub_env_packages.append(envPkg)
@@ -1106,13 +1429,16 @@ class EnvironmentClass(BaseGeneratorClass):
     """Add a sub environment instantiation to the definition of this environment class"""
     self.numAgents = agentList.__len__()
     self.qvipSubEnvironments.append(QvipSubEnvironmentClass(name,envPkg,self.numAgents,self.agentIndex,agentList,envHasICVIP,envHasQVIP))
-    # line below updates agentIndex after appending info to qvip_if_name array 
+    # line below updates agentIndex after appending info to qvip_if_name array
     self.agentIndex = self.agentIndex+self.numAgents
     if (envPkg not in self.qvip_sub_env_packages):
       self.qvip_sub_env_packages.append(envPkg)
     for element in agentList:
-      if element['type'] == 'qvip':
+      if element['type'] == 'vip':
         self.qvip_ap_names.append(QvipAPClass(name,element['name']))
+
+  def addVipSubEnv(self,name,envPkg,agentList,envHasICVIP,envHasQVIP):
+    self.addQvipSubEnv(name,envPkg,agentList,envHasICVIP,envHasQVIP)
 
   def addAnalysisPort(self,name,tType,connection=""):
     """Build and connect an analysis port connection of the given name and transaction type"""
@@ -1125,6 +1451,9 @@ class EnvironmentClass(BaseGeneratorClass):
   def addQvipConnection(self, output_component, output_port_name, input_component, input_component_export_name,validate=True):
     """Add a Qvip Connection for the environment package"""
     self.qvipConnections.append(QvipConnectionClass(output_component, output_port_name, input_component, input_component_export_name,validate))
+
+  def addVipConnection(self, output_component, output_port_name, input_component, input_component_export_name,validate=True):
+    self.addQvipConnection(output_component, output_port_name, input_component, input_component_export_name,validate)
 
   def addImpDecl(self,name):
     """Add an impDecl call for this environment package"""
@@ -1200,6 +1529,7 @@ class EnvironmentClass(BaseGeneratorClass):
                                                      "exports":analysisComp.analysisExports,
                                                      "ports":analysisComp.analysisPorts,
                                                      "qvip_exports":analysisComp.qvipAnalysisExports,
+                                                     "vip_exports":analysisComp.qvipAnalysisExports,
                                                      "parameters":analysisComp.parameters,
                                                       })
     for regModel in self.regModels:
@@ -1276,11 +1606,13 @@ class BenchClass(BaseGeneratorClass):
     self.regBlockClass = ''
     self.regBlockInstance = env_name+"_rm"
     self.using_qvip = False
+    self.using_vip = False
     self.mtlbReady = False
     self.useBCR = False
     self.bench_plusargs = []
     self.used_uvmf_envs = []
     self.used_qvip_envs = []
+    self.used_vip_envs = []
     for parameterName in parametersDict:
       self.envParamDefs.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
     self.dest_dir_override = None
@@ -1294,12 +1626,17 @@ class BenchClass(BaseGeneratorClass):
     template['bfm_pkgs'] = self.bfm_packages
     template['bfm_pkg_env_variables'] = self.bfm_pkg_env_variables
     template['qvip_pkg_file_lists'] = self.qvip_pkg_file_lists
+    template['vip_pkg_file_lists'] = self.qvip_pkg_file_lists
     template['vipLibEnvVariableNames'] = self.vipLibEnvVariableNames
     template['qvip_bfms'] = self.qvip_bfms
+    template['vip_bfms'] = self.qvip_bfms
     template['qvip_hdl_modules'] = self.qvip_hdl_modules
+    template['vip_hdl_modules'] = self.qvip_hdl_modules
     template['qvip_bfm_pkgs'] = self.qvip_bfm_packages
+    template['vip_bfm_pkgs'] = self.qvip_bfm_packages
     template['vip_packages'] = self.vip_packages
     template['qvip_pkg_env_variables'] = self.qvip_pkg_env_variables
+    template['vip_pkg_env_variables'] = self.qvip_pkg_env_variables
     template['veloceReady'] = self.veloceReady
     template['useCoEmuClkRstGen'] = self.useCoEmuClkRstGen
     template['inFactEnabled'] = self.inFactEnabled
@@ -1320,11 +1657,13 @@ class BenchClass(BaseGeneratorClass):
     template['regBlockInstance'] = self.regBlockInstance
     template['svLibNames'] = self.svLibNames
     template['using_qvip'] = self.using_qvip
+    template['using_vip'] = self.using_vip or self.using_qvip
     template['mtlbReady'] = self.mtlbReady
     template['useBCR'] = self.useBCR
     template['bench_plusargs'] = self.bench_plusargs
     template['usedUvmfEnvs'] = self.used_uvmf_envs
     template['usedQvipEnvs'] = self.used_qvip_envs
+    template['usedVipEnvs'] = self.used_vip_envs if len(self.used_vip_envs) else self.used_qvip_envs
     return template
 
   ## Overload of the create function - insert some conditional considerations
@@ -1336,7 +1675,7 @@ class BenchClass(BaseGeneratorClass):
         self.conditional_array.append('need_overlay')
     if self.mtlbReady:
       self.conditional_array.append('mtlbReady')
-    if self.using_qvip and ('need_overlay' not in self.conditional_array):
+    if (self.using_qvip or self.using_vip) and ('need_overlay' not in self.conditional_array):
       self.conditional_array.append('need_overlay')
     super(BenchClass,self).create(desired_template,parser,archive_yaml=archive_yaml)
 
@@ -1387,7 +1726,7 @@ class BenchClass(BaseGeneratorClass):
       self.qvip_bfm_packages.append(ifPkg)
       self.qvip_pkg_env_variables.append(str(ifPkg).upper())    ## PYTHON3
       self.qvip_pkg_file_lists.append(QvipFileListClass(name,ifPkg,vipType))
-    else: 
+    else:
       for qvip_icvip_pkg in self.qvip_pkg_file_lists:
         if ( ifPkg == qvip_icvip_pkg.envPkg):
           if (vipType not in qvip_icvip_pkg.agent_types):
@@ -1402,8 +1741,14 @@ class BenchClass(BaseGeneratorClass):
           hdl_module.agent_types.append(str(vipType))
         hdl_module.agent_activities.update({(str(name).upper()):activity})
     self.using_qvip = True
+    self.using_vip = True
     if 'using_qvip' not in self.conditional_array:
       self.conditional_array.append('using_qvip')
+    if 'using_vip' not in self.conditional_array:
+      self.conditional_array.append('using_vip')
+
+  def addVipBfm(self,name,ifPkg,activity,unique_id="",sequencer="",vipPkg="",vipType=""):
+    self.addQvipBfm(name,ifPkg,activity,unique_id,sequencer,vipPkg,vipType)
 
   def addTopLevel(self,topName):
     """Add additional top-level module for simulation"""

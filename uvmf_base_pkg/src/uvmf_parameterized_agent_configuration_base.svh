@@ -3,14 +3,14 @@
 //   Digital Industries Software
 //   Siemens EDA
 //   All Rights Reserved Worldwide
-//
+
 //   Licensed under the Apache License, Version 2.0 (the
 //   "License"); you may not use this file except in
 //   compliance with the License.  You may obtain a copy of
 //   the License at
-//
+
 //       http://www.apache.org/licenses/LICENSE-2.0
-//
+
 //   Unless required by applicable law or agreed to in
 //   writing, software distributed under the License is
 //   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -35,30 +35,30 @@
 // and other are optional based on the nature of the agent.  Extensions to this class
 // should contain virtual interface handles to the monitor bfm interface and driver bfm
 // interface.  Extensions to this class should also include any protocol specific variables.
-//
+
 // PARAMETERS:
 //     DRIVER_BFM_BIND_T -  The driver BFM binding type.
-//                          This type is a virtual interface when using native SV VIF-based proxy-BFM communication. 
-//                          This type is a chandle when using DPI-C based proxy-BFM communication.                
+//                          This type is a virtual interface when using native SV VIF-based proxy-BFM communication.
+//                          This type is a chandle when using DPI-C based proxy-BFM communication.
 //                          This type can also be a class for an 'indirect' class-based use model like 2-kingdoms (or MCD DPI).
-//                           
-//     MONITOR_BFM_BIND_T - The monitor BFM binding type.
-//                          This type is a virtual interface when using native SV VIF-based proxy-BFM communication. 
-//                          This type is a chandle when using DPI-C based proxy-BFM communication.                
-//                          This type can also be a class for an 'indirect' class-based use model like 2-kingdoms (or MCD DPI).
-//                           
 
-virtual class uvmf_parameterized_agent_configuration_base #( 
-   type DRIVER_BFM_BIND_T,
-   type MONITOR_BFM_BIND_T,
-   type BASE_T = uvm_object
+//     MONITOR_BFM_BIND_T - The monitor BFM binding type.
+//                          This type is a virtual interface when using native SV VIF-based proxy-BFM communication.
+//                          This type is a chandle when using DPI-C based proxy-BFM communication.
+//                          This type can also be a class for an 'indirect' class-based use model like 2-kingdoms (or MCD DPI).
+
+
+virtual class uvmf_parameterized_agent_configuration_base #(
+    type DRIVER_BFM_BIND_T,
+    type MONITOR_BFM_BIND_T,
+    type BASE_T = uvm_object
 ) extends BASE_T;
 
   // VARIABLE: driver_bfm
   // VARIABLE: monitor_bfm
   // Driver and monitor HDL BFM reference
   // Typically a virtual interface for the VIF-based use model, but can
-  // also be a chandle for the DPI-C based use model, or even an object 
+  // also be a chandle for the DPI-C based use model, or even an object
   // handle for a class-based use model like 2-kingdoms
   DRIVER_BFM_BIND_T  driver_bfm;
   MONITOR_BFM_BIND_T monitor_bfm;
@@ -66,7 +66,7 @@ virtual class uvmf_parameterized_agent_configuration_base #(
   // STRING: driver_bfm_hdl_path
   // STRING: monitor_bfm_hdl_path
   // Driver and monitor HDL BFM hierarchical path
-  // HDL scope hierarchical string path for the driver and monitor HDL 
+  // HDL scope hierarchical string path for the driver and monitor HDL
   // BFM instances corresponding to above BFM references
   // (relevant only for DPI-C based use model, i.e. when the bind type parameters are chandles)
   string driver_bfm_hdl_path;
@@ -109,7 +109,7 @@ virtual class uvmf_parameterized_agent_configuration_base #(
   bit return_transaction_response;
 
   // FUNCTION: new
-  function new( string name = "" );
+  function new(string name = "");
     super.new(name);
     report_id = name;
   endfunction
@@ -118,52 +118,67 @@ virtual class uvmf_parameterized_agent_configuration_base #(
   // This function is used to set the interfaces used by the agent. Executed by super.initialize
   // executed by classes derived by this class. It also looks in the config_db to determine if this agent
   // should enable transaction viewing in the waveform.
-  //
+
   // ARGUMENTS:
   //    activity -         Set the <uvmf_active_passive_t> of the agent
   //    agent_path -       Set the uvm hierarchical path down to this agent
   //    interface_name -   Set the string name of the bfm virtual interface
-   virtual function void initialize(
-                                              uvmf_active_passive_t activity,
-                                              string agent_path,
-                                              string interface_name);
-      active_passive      = activity;
-      this.interface_name = interface_name;
+  virtual function void initialize(uvmf_active_passive_t activity, string agent_path,
+                                   string interface_name);
+    active_passive      = activity;
+    this.interface_name = interface_name;
 
-    `uvm_info("CFG", 
-              $psprintf("The agent at '%s' is using interface named %s and is configured as %s", agent_path, interface_name, activity),
-              UVM_DEBUG)
+    `uvm_info("CFG", $sformatf(
+              "The agent at '%s' is using interface named %s and is configured as %s",
+              agent_path,
+              interface_name,
+              activity
+              ), UVM_DEBUG)
 
-      // Checking the config_db
-      void'(uvm_config_db #(uvm_bitstream_t)::get(null,interface_name,"enable_transaction_viewing",enable_transaction_viewing));
-    if( !uvm_config_db #( MONITOR_BFM_BIND_T )::get( null , UVMF_VIRTUAL_INTERFACES , interface_name , monitor_bfm ) ) begin
-            $stacktrace;
-            `uvm_fatal("CFG" , $sformatf("uvm_config_db #( MONITOR_BFM_BIND_T )::get cannot find monitor bfm resource with interface_name %s",interface_name) )
-       end
-
-    if ( activity == ACTIVE ) begin
-       if( !uvm_config_db #( DRIVER_BFM_BIND_T )::get( null , UVMF_VIRTUAL_INTERFACES , interface_name , driver_bfm ) ) begin
-            $stacktrace;
-            `uvm_fatal("CFG" , $sformatf("uvm_config_db #( DRIVER_BFM_BIND_T )::get cannot find driver bfm resource with interface_name %s",interface_name) )
-       end
+    // Checking the config_db
+    void'(uvm_config_db#(uvm_bitstream_t)::get(
+        null, interface_name, "enable_transaction_viewing", enable_transaction_viewing
+    ));
+    if (!uvm_config_db#(MONITOR_BFM_BIND_T)::get(
+            null, UVMF_VIRTUAL_INTERFACES, interface_name, monitor_bfm
+        )) begin
+      $stacktrace;
+      `uvm_fatal(
+          "CFG",
+          $sformatf(
+              "uvm_config_db #( MONITOR_BFM_BIND_T )::get cannot find monitor bfm resource with interface_name %s",
+              interface_name))
     end
 
-   endfunction
+    if (activity == ACTIVE) begin
+      if (!uvm_config_db#(DRIVER_BFM_BIND_T)::get(
+              null, UVMF_VIRTUAL_INTERFACES, interface_name, driver_bfm
+          )) begin
+        $stacktrace;
+        `uvm_fatal(
+            "CFG",
+            $sformatf(
+                "uvm_config_db #( DRIVER_BFM_BIND_T )::get cannot find driver bfm resource with interface_name %s",
+                interface_name))
+      end
+    end
+
+  endfunction
 
   // FUNCTION: convert2string
   // Displays the information in this configuration. Should be defined in a derived class
   // if more information is defined.
   virtual function string convert2string();
-     string msg;
-     $sformat(msg,"enable_transaction_viewing:%d active_passive:%s has_coverage:%d",
-           enable_transaction_viewing, active_passive, has_coverage);
-     return msg;
+    string msg;
+    $sformat(msg, "enable_transaction_viewing:%d active_passive:%s has_coverage:%d",
+             enable_transaction_viewing, active_passive, has_coverage);
+    return msg;
 
-   endfunction
+  endfunction
 
-// ****************************************************************************
+  // ****************************************************************************
   // TASK: wait_for_reset
-  // *[Required]*  Blocks until reset is released.  The wait_for_reset FSM 
+  // *[Required]*  Blocks until reset is released.  The wait_for_reset FSM
   // is typically modeled in the monitor bfm.
   // *[Example implementation]*
   //     virtual task wait_for_reset();
@@ -172,9 +187,9 @@ virtual class uvmf_parameterized_agent_configuration_base #(
   virtual task wait_for_reset();
   endtask
 
-// ****************************************************************************
+  // ****************************************************************************
   // TASK: wait_for_num_clocks
-  // *[Required]* Blocks until specified number of clocks have elapsed. The 
+  // *[Required]* Blocks until specified number of clocks have elapsed. The
   // wait_for_num_clocks FSM is typically modeled in the monitor bfm.
   // *[Example implementation]*
   //     virtual task wait_for_num_clocks(int clocks);
@@ -183,18 +198,20 @@ virtual class uvmf_parameterized_agent_configuration_base #(
   virtual task wait_for_num_clocks(int clocks);
   endtask
 
-// ****************************************************************************
-   function uvmf_parameterized_agent_configuration_base_s to_struct();
-     uvmf_parameterized_agent_configuration_base_s s;
-     {s.active_passive, s.initiator_responder, s.has_coverage} =
-        {this.active_passive, this.initiator_responder, this.has_coverage};
-     return s;
-   endfunction
- 
-// ****************************************************************************
-   function void from_struct(uvmf_parameterized_agent_configuration_base_s s);
-     {this.active_passive, this.initiator_responder, this.has_coverage} =
-        {s.active_passive, s.initiator_responder, s.has_coverage};
-   endfunction
+  // ****************************************************************************
+  function uvmf_parameterized_agent_configuration_base_s to_struct();
+    uvmf_parameterized_agent_configuration_base_s s;
+    {s.active_passive, s.initiator_responder, s.has_coverage} = {
+      this.active_passive, this.initiator_responder, this.has_coverage
+    };
+    return s;
+  endfunction
+
+  // ****************************************************************************
+  function void from_struct(uvmf_parameterized_agent_configuration_base_s s);
+    {this.active_passive, this.initiator_responder, this.has_coverage} = {
+      s.active_passive, s.initiator_responder, s.has_coverage
+    };
+  endfunction
 
 endclass : uvmf_parameterized_agent_configuration_base

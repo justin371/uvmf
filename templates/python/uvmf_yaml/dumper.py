@@ -46,7 +46,7 @@ class BenchDumper:
         if (i.value):
           data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
         else:
-          data['parameters'].append({'name':i.name,'type':i.type})         
+          data['parameters'].append({'name':i.name,'type':i.type})
     if (len(self.obj.envParamDefs)):
       data['top_env_params'] = []
       for i in self.obj.envParamDefs:
@@ -84,12 +84,12 @@ class EnvironmentDumper:
     data = {}
     if (is_archive == True):
       data['existing_library_component'] = "True"
-    data['qvip_memory_agents'] = []
+    data['vip_memory_agents'] = []
     for i in self.obj.qvipMemoryAgents:
       params = []
       for p in i.parameters:
         params.append({'name':p.name,'value':p.value})
-      data['qvip_memory_agents'].append({'name':i.name,'type':i.type,'qvip_environment':i.qvipEnv,'parameters':params})
+      data['vip_memory_agents'].append({'name':i.name,'type':i.type,'vip_environment':i.qvipEnv,'parameters':params})
     data['non_uvmf_components'] = []
     for i in self.obj.nonUvmfComponents:
       if (len(i.parameters)>0):
@@ -107,13 +107,16 @@ class EnvironmentDumper:
           params.append({'name':p.name,'value':p.value})
         data['agents'].append({'name':i.name,'type':i.ifPkg,'parameters':params,'initiator_responder':i.initResp})
       else:
-        data['agents'].append({'name':i.name,'type':i.ifPkg,'initiator_responder':i.initResp}) 
+        data['agents'].append({'name':i.name,'type':i.ifPkg,'initiator_responder':i.initResp})
     data['subenvs'] = []
     for i in self.obj.subEnvironments:
       params = []
       for p in i.parameters:
         params.append({'name':p.name,'value':p.value})
-      data['subenvs'].append({'name':i.name,'type':i.envPkg,'parameters':params,'reg_block_instance_name':i.regBlockInstance})
+      subenv = {'name':i.name,'type':i.envPkg,'parameters':params,'use_register_model':str(i.regModelPkg != None),'reg_block_instance_name':i.regBlockInstance}
+      if i.baseAddress is not None:
+        subenv['base_address'] = i.baseAddress
+      data['subenvs'].append(subenv)
     data['analysis_components'] = []
     for i in self.obj.analysisComponents:
       params = []
@@ -128,7 +131,7 @@ class EnvironmentDumper:
         for p in i.parameters:
           params.append({'name':p.name,'value':p.value})
         data['scoreboards'].append({'name':i.name,'sb_type':i.sType,'trans_type':i.tType,'parameters':params})
-      else:      
+      else:
         data['scoreboards'].append({'name':i.name,'sb_type':i.sType,'trans_type':i.tType})
     data['analysis_ports'] = []
     for i in self.obj.analysis_ports:
@@ -147,13 +150,13 @@ class EnvironmentDumper:
       if (i.value):
         data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
       else:
-        data['parameters'].append({'name':i.name,'type':i.type})        
+        data['parameters'].append({'name':i.name,'type':i.type})
     data['hvl_pkg_parameters'] = []
     for i in self.obj.hvlPkgParamDefs:
       if (i.value):
         data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
       else:
-        data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type})        
+        data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type})
     data['tlm_connections'] = []
     for i in self.obj.connections:
       driverHier = i.name;
@@ -178,7 +181,7 @@ class EnvironmentDumper:
                                    'reg_model_package': str(rm.regModelPkg),
                                    'reg_block_class': str(rm.regBlockClass),
                                    'reg_adapter_class': str(rm.adapterType),
-                                   'maps': [ { 'name': rm.busMap, 'interface': ifname, 'qvip_agent': str(rm.qvipAgent), 'interface_type':str(rm.vipType)} ]
+                                   'maps': [ { 'name': rm.busMap, 'interface': ifname, 'vip_agent': str(rm.qvipAgent), 'interface_type':('vip' if str(rm.vipType) == 'qvip' else str(rm.vipType))} ]
                                   }
     if self.obj.soName!="":
       data['dpi_define'] = {}
@@ -201,13 +204,13 @@ class EnvironmentDumper:
           v['sv_args'] = i.arguments
           data['dpi_define']['imports'].append(v)
     if len(self.obj.qvipSubEnvironments):
-      data['qvip_subenvs'] = []
+      data['vip_subenvs'] = []
       for i in self.obj.qvipSubEnvironments:
-        data['qvip_subenvs'].append({'name':i.name,'type':i.envPkg})
+        data['vip_subenvs'].append({'name':i.name,'type':i.envPkg})
     if len(self.obj.qvipConnections):
-      data['qvip_connections'] = []
+      data['vip_connections'] = []
       for i in self.obj.qvipConnections:
-        data['qvip_connections'].append({'driver':i.output_component,'ap_key':i.output_port_name,'receiver':i.input_component+"."+i.input_component_export_name,'validate':str(i.validate)})
+        data['vip_connections'].append({'driver':i.output_component,'ap_key':i.output_port_name,'receiver':i.input_component+"."+i.input_component_export_name,'validate':str(i.validate)})
     if (len(self.obj.external_imports)):
       data['imports'] = []
       for i in self.obj.external_imports:
@@ -248,9 +251,9 @@ class ComponentDumper:
       for i in self.obj.analysisPorts:
         data['analysis_ports'].append({'name':i.name,'type':i.tType})
     if len(self.obj.qvipAnalysisExports):
-      data['qvip_analysis_exports'] = []
+      data['vip_analysis_exports'] = []
       for i in self.obj.qvipAnalysisExports:
-        data['qvip_analysis_exports'].append({'name':i.name,'type':i.tType})
+        data['vip_analysis_exports'].append({'name':i.name,'type':i.tType})
     if len(self.obj.parameters):
       data['parameters'] = []
       for i in self.obj.parameters:
@@ -259,7 +262,7 @@ class ComponentDumper:
         else:
           data['parameters'].append({'name':i.name,'type':i.type})
     return data
-     
+
 
 class InterfaceDumper:
 
@@ -287,19 +290,19 @@ class InterfaceDumper:
       if (i.value):
         data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
       else:
-        data['parameters'].append({'name':i.name,'type':i.type})        
+        data['parameters'].append({'name':i.name,'type':i.type})
     data['hdl_pkg_parameters'] = []
     for i in self.obj.hdlPkgParamDefs:
       if (i.value):
         data['hdl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
       else:
-        data['hdl_pkg_parameters'].append({'name':i.name,'type':i.type})        
+        data['hdl_pkg_parameters'].append({'name':i.name,'type':i.type})
     data['hvl_pkg_parameters'] = []
     for i in self.obj.hvlPkgParamDefs:
       if (i.value):
         data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
       else:
-        data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type})        
+        data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type})
     data['ports'] = []
     for i in self.obj.ports:
       data['ports'].append({'name':str(i.name),'width':str(i.width),'dir':str(i.dir),'reset_value':str(i.rstValue)})
@@ -343,15 +346,26 @@ class InterfaceDumper:
       data['veloce_ready'] = "False"
     return data
 
-import sys
-import os
-if (sys.version_info[0] < 3):
-  sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/python2")
 import yaml
+
+BOOLEAN_KEYS = {
+  'catapult_ready','elaborate_bfm_parameters','enable_functional_coverage',
+  'existing_library_component','extdef','flat_output','gen_inbound_streaming_driver',
+  'infact_enabled','iscompare','isrand','mtlb_ready','use_adapter','use_bcr',
+  'use_coemu_clk_rst_gen','use_dpi_link','use_explicit_prediction',
+  'use_register_model','veloce_ready','vip_agent',
+}
+
+def canonical_yaml_values(value,key=None):
+  if isinstance(value,dict):
+    return {k:canonical_yaml_values(v,k) for k,v in value.items()}
+  if isinstance(value,list):
+    return [canonical_yaml_values(item,key) for item in value]
+  if key in BOOLEAN_KEYS and value in ('True','False'):
+    return value == 'True'
+  return value
 
 class YAMLGenerator:
   def __init__(self,data,outfilename,default_style='"'):
     with open(outfilename,'w') as outfile:
-      yaml.dump(data,outfile,default_flow_style=False,width=float('inf'))
-
-
+      yaml.dump(canonical_yaml_values(data),outfile,default_flow_style=False,width=float('inf'),sort_keys=False)

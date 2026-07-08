@@ -3,23 +3,23 @@
 
 {% block description %}
 //----------------------------------------------------------------------
-//     
+
 // PACKAGE: This file defines all of the files contained in the
 //    interface package that needs to be compiled and synthesized
 //    for running on Veloce.
-//
+
 // CONTAINS:
 //    - <{{name}}_typedefs_hdl>
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
 package {{name}}_pkg_hdl;
-  
+
   import uvmf_base_pkg_hdl::*;
 
-  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional begin
   // pragma uvmf custom package_imports_additional end
 
   // Parameters defined as HDL parameters

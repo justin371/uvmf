@@ -17,7 +17,7 @@ switch $tcl_platform(platform) {
   unix {
     set gcc_out_ext "so"
     set gcc_comp_args "-fPIC"
-  } 
+  }
   windows {
     set gcc_out_ext "dll"
     set gcc_comp_args ""
@@ -52,6 +52,3 @@ quietly set cmd [format "%s %s/{{environment_location}}/{{name}}_env_pkg/registe
 {% endif %}
 quietly set cmd [format "%s %s/{{environment_location}}/{{name}}_env_pkg/{{name}}_env_pkg.sv" $cmd $env(UVMF_VIP_LIBRARY_HOME)]
 eval $cmd
-
-
-

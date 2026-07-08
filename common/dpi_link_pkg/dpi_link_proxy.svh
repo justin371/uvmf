@@ -1,13 +1,13 @@
 //---------------------------------------------------------------------------
-// Copyright 2014 Mentor Graphics Corporation 
-//    All Rights Reserved 
-// 
-// THIS WORK CONTAINS TRADE SECRET 
-// AND PROPRIETARY INFORMATION WHICH IS THE 
-// PROPERTY OF MENTOR GRAPHICS 
-// CORPORATION OR ITS LICENSORS AND IS 
-// SUBJECT TO LICENSE TERMS. 
-// 
+// Copyright 2014 Mentor Graphics Corporation
+//    All Rights Reserved
+
+// THIS WORK CONTAINS TRADE SECRET
+// AND PROPRIETARY INFORMATION WHICH IS THE
+// PROPERTY OF MENTOR GRAPHICS
+// CORPORATION OR ITS LICENSORS AND IS
+// SUBJECT TO LICENSE TERMS.
+
 //---------------------------------------------------------------------------
 //   WARRANTY:
 //   Use all material in this file at your own risk.  Mentor Graphics, Corp.
@@ -17,33 +17,34 @@
 // $Revision: 4120 $
 //---------------------------------------------------------------------------
 class dpi_link_proxy extends uvm_object;
-   `uvm_object_utils(dpi_link_proxy)
-   
-   dpi_link_event dpi_link_event_h;
-   
-   protected function new(string name = "");
-      dpi_link_proxy_pool pool_h;
-      super.new(name);
-      
-      // check for XRTL
-      if (!scope_exists(get_xrtl_path()))
-	`uvm_fatal("dpi_link_proxy", {"Tried to set a proxy to a  nonexistant scope: ", get_xrtl_path()});
-      
-      // Store the event syncronizer
-      dpi_link_event_h = dpi_link_event::get_event_using_xrtl_path(get_xrtl_path());
-      
-endfunction : new
+  `uvm_object_utils(dpi_link_proxy)
 
-   `dpi_link_proxy_get(dpi_link_proxy)
+  dpi_link_event dpi_link_event_h;
 
-function string get_xrtl_path();
-   return super.get_name();
-endfunction : get_xrtl_path
+  protected
+  function new(string name = "");
+    dpi_link_proxy_pool pool_h;
+    super.new(name);
 
-task wait_for(output int unsigned ret_val);
+    // check for XRTL
+    if (!scope_exists(get_xrtl_path()))
+      `uvm_fatal("dpi_link_proxy", {
+                 "Tried to set a proxy to a  nonexistant scope: ", get_xrtl_path()});
+
+    // Store the event syncronizer
+    dpi_link_event_h = dpi_link_event::get_event_using_xrtl_path(get_xrtl_path());
+
+  endfunction : new
+
+  `dpi_link_proxy_get(dpi_link_proxy)
+
+  function string get_xrtl_path();
+    return super.get_name();
+  endfunction : get_xrtl_path
+
+  task wait_for(output int unsigned ret_val);
     dpi_link_event_h.wait_for(ret_val);
-endtask : wait_for
+  endtask : wait_for
 
 
 endclass : dpi_link_proxy
-

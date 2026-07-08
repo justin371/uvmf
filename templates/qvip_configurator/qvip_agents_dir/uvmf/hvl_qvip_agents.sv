@@ -1,4 +1,4 @@
-module  hvl_qvip_agents 
+module  hvl_qvip_agents
       #(
         string HDL_BFM_SCOPE = "",
         string HVL_AGENT_SCOPE = ""
@@ -9,4 +9,3 @@ module  hvl_qvip_agents
   end
 
 endmodule
-

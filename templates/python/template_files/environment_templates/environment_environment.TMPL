@@ -1,12 +1,12 @@
-{% set fname = "{{vip_location}}/{{environment_location}}/{{name}}_env_pkg/{{src_dir}}{{name}}_environment.svh" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{name}}_env_pkg/{{src_dir}}{{name}}_environment.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//                                          
+
 // DESCRIPTION: This environment contains all agents, predictors and
 // scoreboards required for the block level design.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -20,7 +20,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% for sub_env in subEnvironments %}
   typedef {{sub_env.envPkg}}_environment{{macro.paramUseNested(sub_env.parameters)|indent(16)}} {{sub_env.name}}_t;
   {{sub_env.name}}_t {{sub_env.name}};
-   
+
 {% endfor -%}
 
 {% for sub_env in qvipSubEnvironments %}
@@ -71,11 +71,11 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endfor -%}
 {% for regModel in regModels %}
 {% if regModel.adapterType != None %}
-{% if regModel.vipType == "qvip" %}
-// UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP: 
-// Identify the UVM reg adapter in the QVIP installation for the protocol agent.
+{% if regModel.vipType == "vip" %}
+// UVMF_CHANGE_ME: VIP_AGENT_USED_FOR_REG_MAP:
+// Identify the UVM reg adapter in the VIP installation for the protocol agent.
 // Change the typedef below to reflect the reg adapter class type and any parameters.
-// Be sure to modify the envioronment package to import the QVIP protocol package 
+// Be sure to modify the envioronment package to import the VIP protocol package
 // that contains the selected adapter.
 {% endif %}
    // Instantiate register model adapter and predictor
@@ -83,8 +83,8 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
    reg_adapter_t reg_adapter;
 {% endif %}
 {% if regModel.transactionType != None %}
-{% if regModel.vipType == "qvip" %}
-// UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP:
+{% if regModel.vipType == "vip" %}
+// UVMF_CHANGE_ME: VIP_AGENT_USED_FOR_REG_MAP:
 // Identify the sequence_item type, including any parameters, used by the reg adapter
 // type specified above.  Parameterize the uvm_reg_predictor to use this sequence item
 // type, including any parameters of the sequence item.
@@ -99,7 +99,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 
   // pragma uvmf custom class_item_additional begin
   // pragma uvmf custom class_item_additional end
- 
+
   // ****************************************************************************
   // FUNCTION : new()
   // This function is the standard SystemVerilog constructor.
@@ -126,7 +126,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     {{sub_env.name}} = {{sub_env.name}}_t::type_id::create("{{sub_env.name}}",this);
     {{sub_env.name}}.set_config(configuration.{{sub_env.name}}_config);
 {% endfor %}
-{% for sub_env in qvipSubEnvironments %}
+{% for sub_env in vipSubEnvironments %}
     {{sub_env.name}} = {{sub_env.envPkg}}_environment#()::type_id::create("{{sub_env.name}}",this);
     {{sub_env.name}}.set_config(configuration.{{sub_env.name}}_config);
 {% endfor %}
@@ -143,7 +143,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% for nonUvmfComp in nonUvmfComponents %}
     {{nonUvmfComp.name}} = {{nonUvmfComp.name}}_t::type_id::create("{{nonUvmfComp.name}}",this);
 {% endfor %}
-{% for qvipMemAgent in qvipMemoryAgents %}
+{% for qvipMemAgent in vipMemoryAgents %}
     {{qvipMemAgent.name}} = {{qvipMemAgent.name}}_t::type_id::create("{{qvipMemAgent.name}}",this);
     {{qvipMemAgent.name}}.set_if_name({get_full_name(),".{{qvipMemAgent.qvipEnv}}",".{{qvipMemAgent.name}}"});
 {% endfor %}
@@ -172,6 +172,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 
     vsqr = {{name}}_vsqr_t::type_id::create("vsqr", this);
     vsqr.set_config(configuration);
+    vsqr.set_env(this);
     configuration.set_vsqr(vsqr);
 
     // pragma uvmf custom build_phase begin
@@ -193,16 +194,16 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% for conn in connections %}
     {{conn.name}}.{{conn.pName}}.connect({{conn.subscriberName}}.{{conn.aeName}});
 {% endfor -%}
-{% for agent in qvip_ap_names %}
-     {{agent.name}}_{{agent.agent}}_ap = {{agent.name}}.{{agent.agent}}.ap; 
+{% for agent in vip_ap_names %}
+     {{agent.name}}_{{agent.agent}}_ap = {{agent.name}}.{{agent.agent}}.ap;
 {% endfor -%}
-{% for connection in qvipConnections %}
+{% for connection in vipConnections %}
     {{connection.output_component}}_ap["{{connection.output_port_name}}"].connect({{connection.input_component}}.{{connection.input_component_export_name}});
 {% endfor -%}
-{% for sub_env in qvipSubEnvironments %}
+{% for sub_env in vipSubEnvironments %}
 {% for agent in sub_env.agentList %}
     if ( configuration.{{sub_env.name}}_interface_activity[{{loop.index0}}] == ACTIVE )
-       uvm_config_db #({{agent.sequencer}})::set(null,UVMF_SEQUENCERS,configuration.{{sub_env.name}}_interface_names[{{loop.index0}}],{{sub_env.name}}.{{agent.name}}.{% if agent.type == "qvip" %}m_{% endif %}sequencer  );
+       uvm_config_db #({{agent.sequencer}})::set(null,UVMF_SEQUENCERS,configuration.{{sub_env.name}}_interface_names[{{loop.index0}}],{{sub_env.name}}.{{agent.name}}.{% if agent.type == "vip" %}m_{% endif %}sequencer  );
 {% endfor -%}
 {% endfor -%}
 {% for ap in analysis_ports %}
@@ -217,22 +218,22 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     // Create register model adapter if required
     if (configuration.enable_reg_prediction ||
         configuration.enable_reg_adaptation)
-{% if regModel.vipType == "qvip" %}
-  // UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP:
-  // Uncomment the construction of the reg adapter below.  This was commented so that the 
+{% if regModel.vipType == "vip" %}
+  // UVMF_CHANGE_ME: VIP_AGENT_USED_FOR_REG_MAP:
+  // Uncomment the construction of the reg adapter below.  This was commented so that the
   // generated code would compile and run as generated.  The uvm_reg_adapter is a virtual
-  // class so it can not be constructed.  Once the type is changed to a QVIP reg adapter
+  // class so it can not be constructed.  Once the type is changed to a VIP reg adapter
   // type, it must be constructed.
 {% endif %}
-      {% if regModel.vipType == "qvip" %}//{% endif %}reg_adapter = new("reg_adapter");
+      {% if regModel.vipType == "vip" %}//{% endif %}reg_adapter = new("reg_adapter");
     // Set sequencer and adapter in register model map
-    if ((configuration.enable_reg_adaptation) && ({{regModel.sequencer}}{% if regModel.vipType == "qvip" %}.m_sequencer{% elif regModel.vipType == "uvmf" %}.sequencer{% endif %} != null ))
-      configuration.{{regModel.regBlockInstance}}.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}{% if regModel.vipType == "qvip" %}.m_sequencer{% elif regModel.vipType == "uvmf" %}.sequencer{% endif %}, reg_adapter);
+    if ((configuration.enable_reg_adaptation) && ({{regModel.sequencer}}{% if regModel.vipType == "vip" %}.m_sequencer{% elif regModel.vipType == "uvmf" %}.sequencer{% endif %} != null ))
+      configuration.{{regModel.regBlockInstance}}.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}{% if regModel.vipType == "vip" %}.m_sequencer{% elif regModel.vipType == "uvmf" %}.sequencer{% endif %}, reg_adapter);
     // Set map and adapter handles within uvm predictor
     if (configuration.enable_reg_prediction) begin
       reg_predictor.map     = configuration.{{regModel.regBlockInstance}}.{{regModel.busMap}};
       reg_predictor.adapter = reg_adapter;
-      // The connection between the agent analysis_port and uvm_reg_predictor 
+      // The connection between the agent analysis_port and uvm_reg_predictor
       // analysis_export could cause problems due to a uvm register package bug,
       // if this environment is used as a sub-environment at a higher level.
       // The uvm register package does not construct sub-maps within register
@@ -240,8 +241,8 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
       // write method associated with the analysis_export fails.  It fails because
       // the write method executes the get_reg_by_offset method of the register
       // map, which is null because of the uvm register package bug.
-      // The call works when operating at block level because the uvm register 
-      // package constructs the top level register map.  The call fails when the 
+      // The call works when operating at block level because the uvm register
+      // package constructs the top level register map.  The call fails when the
       // register map associated with this environment is a sub-map.  Construction
       // of the sub-maps must be done manually.
       //{{regModel.sequencer}}.monitored_ap.connect(reg_predictor.bus_in);
@@ -255,7 +256,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
   // FUNCTION: end_of_simulation_phase()
   // This function is executed just prior to executing run_phase.  This function
   // was added to the environment to sample environment configuration settings
-  // just before the simulation exits time 0.  The configuration structure is 
+  // just before the simulation exits time 0.  The configuration structure is
   // randomized in the build phase before the environment structure is constructed.
   // Configuration variables can be customized after randomization in the build_phase
   // of the extended test.

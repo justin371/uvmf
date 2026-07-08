@@ -1,15 +1,15 @@
-{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{src_dir}}{{name}}_bench_sequence_base.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{src_dir}}{{name}}_bench_sequence_base.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//
+
 // Description: This file contains the top level and utility sequences
 //     used by test_top. It can be extended to create derivative top
 //     level sequences.
-//
+
 //----------------------------------------------------------------------
-//
+
 {% endblock %}
 
 {% block contents %}
@@ -25,7 +25,7 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 
 // This example shows how to use the environment sequence base
 // It can only be used on environments generated with UVMF_2022.3 and later.
-// Environment sequences generated with UVMF_2022.1 and earlier do not have the required 
+// Environment sequences generated with UVMF_2022.1 and earlier do not have the required
 //    environment level virtual sequencer
 // typedef {{env_name}}_env_sequence_base #(
 //         .CONFIG_T({{env_name}}_env_configuration_t){% if envParamDefs|length > 0 %}{% for param in envParamDefs -%}{% if loop.first %},
@@ -33,7 +33,7 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 //         .{{param.name}}({{param.value}}){% if not loop.last %},
 {% endif %}{% endfor %}
 {% endif %}
-// 
+
 //         )
 //         {{env_name}}_env_sequence_base_t;
 // rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
@@ -62,13 +62,13 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
   typedef {{bfm.ifPkg}}_transaction {{macro.paramUseNested(bfm.parameters)|indent(8)}} {{bfm.name}}_transaction_t;
-  uvm_sequencer #({{bfm.name}}_transaction_t)  {{bfm.name}}_sequencer; 
+  uvm_sequencer #({{bfm.name}}_transaction_t)  {{bfm.name}}_sequencer;
 {% endif %}
 {% endfor %}
 
-{% if qvip_bfms|length > 0 %}
-  // Sequencer handles for each QVIP interface
-{% for agent in qvip_bfms %}
+{% if vip_bfms|length > 0 %}
+  // Sequencer handles for each VIP interface
+{% for agent in vip_bfms %}
   {{agent.sequencer}} {{agent.unique_id_with_underscores}}{{agent.name}}_sqr;
 {% endfor %}
 {% endif %}
@@ -92,7 +92,7 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
   // bfm is set here.  Usage elsewhere in testbench can just use a
   // clock_ctrl_base handle.
   clock_ctrl_base clk_ctrl;
-  
+
   //variable: reset_ctrl
   //Reset Proxy Object used to control Reset
   // Must be extended reset_ctrl object and not reset_ctrl_base because bfm
@@ -117,7 +117,7 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 
     // Retrieve config handles for all agents
 {% for bfm in bfms %}
-    if( !uvm_config_db #( {{bfm.ifPkg}}_configuration{{macro.paramUseNested(bfm.parameters)|indent(8)}} )::get( null , UVMF_CONFIGURATIONS , {{bfm.name}}_BFM , {{bfm.name}}_config ) ) 
+    if( !uvm_config_db #( {{bfm.ifPkg}}_configuration{{macro.paramUseNested(bfm.parameters)|indent(8)}} )::get( null , UVMF_CONFIGURATIONS , {{bfm.name}}_BFM , {{bfm.name}}_config ) )
       `uvm_fatal("CFG" , "uvm_config_db #( {{bfm.ifPkg}}_configuration )::get cannot find resource {{bfm.name}}_BFM" )
 {% endfor %}
 
@@ -128,12 +128,12 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% endif %}
 {% endfor %}
 
-{% if qvip_bfms|length > 0 %}
-    // Retrieve QVIP sequencer handles from the uvm_config_db
-{% for agent in qvip_bfms %}
+{% if vip_bfms|length > 0 %}
+    // Retrieve VIP sequencer handles from the uvm_config_db
+{% for agent in vip_bfms %}
 {% if  agent.activity == 'ACTIVE' %}
-    if( !uvm_config_db #({{agent.sequencer}})::get( null,UVMF_SEQUENCERS,"{{agent.unique_id}}{{agent.name}}", {{agent.unique_id_with_underscores}}{{agent.name}}_sqr) ) 
-      `uvm_warning("CFG" , "uvm_config_db #( {{agent.sequencer}} )::get cannot find resource {{agent.name}}" ) 
+    if( !uvm_config_db #({{agent.sequencer}})::get( null,UVMF_SEQUENCERS,"{{agent.unique_id}}{{agent.name}}", {{agent.unique_id_with_underscores}}{{agent.name}}_sqr) )
+      `uvm_warning("CFG" , "uvm_config_db #( {{agent.sequencer}} )::get cannot find resource {{agent.name}}" )
 {% endif %}
 {% endfor %}
 {% endif %}
@@ -201,8 +201,8 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 
 // {{env_name}}_env_seq.start(top_configuration.vsqr);
 
-    // UVMF_CHANGE_ME : Extend the simulation XXX number of clocks after 
-    // the last sequence to allow for the last sequence item to flow 
+    // UVMF_CHANGE_ME : Extend the simulation XXX number of clocks after
+    // the last sequence to allow for the last sequence item to flow
     // through the design.
     fork
 {% for bfm in bfms %}

@@ -11,9 +11,9 @@
 // Creation Date   : 7/30/12 4:26 PM
 //----------------------------------------------------------------------
 // Title           : register_files
-//
-// Description     : 
-//
+
+// Description     :
+
 //----------------------------------------------------------------------
 
 //----------------------------------------------------------------------
@@ -21,492 +21,490 @@
 //----------------------------------------------------------------------
 package dut_registers_pkg;
 
-   import uvm_pkg::*;
-   import quirky_regs_pkg::*;;
+  import uvm_pkg::*;
+  import quirky_regs_pkg::*;
+  ;
 
-   `include "uvm_macros.svh"
+  `include "uvm_macros.svh"
 
-   /* DEFINE REGISTER CLASSES */
-
-
-
-   //--------------------------------------------------------------------
-   // Class: small_mem
-   // 
-   //--------------------------------------------------------------------
-
-   class small_mem extends uvm_mem;
-      `uvm_object_utils(small_mem)
+  /* DEFINE REGISTER CLASSES */
 
 
 
-      // Function: new
-      // 
-      function new(string name = "small_mem");
-         super.new(name, 32'h00000010, 16, "RW", UVM_NO_COVERAGE);
-      endfunction
-   endclass
+  //--------------------------------------------------------------------
+  // Class: small_mem
+
+  //--------------------------------------------------------------------
+
+  class small_mem extends uvm_mem;
+    `uvm_object_utils(small_mem)
 
 
 
-   //--------------------------------------------------------------------
-   // Class: holding_reg
-   // 
-   //--------------------------------------------------------------------
+    // Function: new
 
-   class holding_reg extends uvm_reg;
-      `uvm_object_utils(holding_reg)
-
-      rand uvm_reg_field data; 
-
-
-      // Function: new
-      // 
-      function new(string name = "holding_reg");
-         super.new(name, 16, UVM_NO_COVERAGE);
-      endfunction
-
-
-      // Function: build
-      // 
-      virtual function void build();
-         data = uvm_reg_field::type_id::create("data");
-
-         data.configure(this, 16, 0, "RW", 0, 16'h0000, 1, 1, 1);
-      endfunction
-   endclass
+    function new(string name = "small_mem");
+      super.new(name, 32'h00000010, 16, "RW", UVM_NO_COVERAGE);
+    endfunction
+  endclass
 
 
 
-   //--------------------------------------------------------------------
-   // Class: back_reg
-   // 
-   //--------------------------------------------------------------------
+  //--------------------------------------------------------------------
+  // Class: holding_reg
 
-   class back_reg extends slave_reg;
-      `uvm_object_utils(back_reg)
+  //--------------------------------------------------------------------
 
-      rand uvm_reg_field upper; 
-      rand uvm_reg_field lower; 
+  class holding_reg extends uvm_reg;
+    `uvm_object_utils(holding_reg)
 
-
-      // Function: new
-      // 
-      function new(string name = "back_reg");
-         super.new(name, UVM_NO_COVERAGE);
-      endfunction
+    rand uvm_reg_field data;
 
 
-      // Function: build
-      // 
-      virtual function void build();
-         upper = uvm_reg_field::type_id::create("upper");
-         lower = uvm_reg_field::type_id::create("lower");
+    // Function: new
 
-         upper.configure(this, 8, 8, "RW", 0, 8'h00, 1, 1, 1);
-         lower.configure(this, 8, 0, "RW", 0, 8'h00, 1, 1, 1);
-      endfunction
-   endclass
+    function new(string name = "holding_reg");
+      super.new(name, 16, UVM_NO_COVERAGE);
+    endfunction
+
+
+    // Function: build
+
+    virtual function void build();
+      data = uvm_reg_field::type_id::create("data");
+
+      data.configure(this, 16, 0, "RW", 0, 16'h0000, 1, 1, 1);
+    endfunction
+  endclass
 
 
 
-   //--------------------------------------------------------------------
-   // Class: status_reg
-   // 
-   //--------------------------------------------------------------------
+  //--------------------------------------------------------------------
+  // Class: back_reg
 
-   class status_reg extends uvm_reg;
-      `uvm_object_utils(status_reg)
+  //--------------------------------------------------------------------
 
-      rand uvm_reg_field reserved; 
-      rand uvm_reg_field ctrl_bit; 
+  class back_reg extends slave_reg;
+    `uvm_object_utils(back_reg)
 
-
-      // Function: new
-      // 
-      function new(string name = "status_reg");
-         super.new(name, 16, UVM_NO_COVERAGE);
-      endfunction
+    rand uvm_reg_field upper;
+    rand uvm_reg_field lower;
 
 
-      // Function: build
-      // 
-      virtual function void build();
-         reserved = uvm_reg_field::type_id::create("reserved");
-         ctrl_bit = uvm_reg_field::type_id::create("ctrl_bit");
+    // Function: new
 
-         reserved.configure(this, 15, 1, "RW", 0, 15'b000000000000000, 1, 1, 0);
-         ctrl_bit.configure(this, 1, 0, "RW", 0, 1'b0, 1, 1, 0);
-      endfunction
-   endclass
+    function new(string name = "back_reg");
+      super.new(name, UVM_NO_COVERAGE);
+    endfunction
 
 
+    // Function: build
 
-   //--------------------------------------------------------------------
-   // Class: front_reg
-   // 
-   //--------------------------------------------------------------------
+    virtual function void build();
+      upper = uvm_reg_field::type_id::create("upper");
+      lower = uvm_reg_field::type_id::create("lower");
 
-   class front_reg extends mirror_reg;
-      `uvm_object_utils(front_reg)
-
-      //rand uvm_reg_field upper; 
-      //rand uvm_reg_field lower; 
-
-
-      // Function: new
-      // 
-      function new(string name = "front_reg");
-         super.new(name, UVM_NO_COVERAGE);
-      endfunction
+      upper.configure(this, 8, 8, "RW", 0, 8'h00, 1, 1, 1);
+      lower.configure(this, 8, 0, "RW", 0, 8'h00, 1, 1, 1);
+    endfunction
+  endclass
 
 
-      // Function: build
-      // 
-      /*virtual function void build();
+
+  //--------------------------------------------------------------------
+  // Class: status_reg
+
+  //--------------------------------------------------------------------
+
+  class status_reg extends uvm_reg;
+    `uvm_object_utils(status_reg)
+
+    rand uvm_reg_field reserved;
+    rand uvm_reg_field ctrl_bit;
+
+
+    // Function: new
+
+    function new(string name = "status_reg");
+      super.new(name, 16, UVM_NO_COVERAGE);
+    endfunction
+
+
+    // Function: build
+
+    virtual function void build();
+      reserved = uvm_reg_field::type_id::create("reserved");
+      ctrl_bit = uvm_reg_field::type_id::create("ctrl_bit");
+
+      reserved.configure(this, 15, 1, "RW", 0, 15'b000000000000000, 1, 1, 0);
+      ctrl_bit.configure(this, 1, 0, "RW", 0, 1'b0, 1, 1, 0);
+    endfunction
+  endclass
+
+
+
+  //--------------------------------------------------------------------
+  // Class: front_reg
+
+  //--------------------------------------------------------------------
+
+  class front_reg extends mirror_reg;
+    `uvm_object_utils(front_reg)
+
+    //rand uvm_reg_field upper;
+    //rand uvm_reg_field lower;
+
+
+    // Function: new
+
+    function new(string name = "front_reg");
+      super.new(name, UVM_NO_COVERAGE);
+    endfunction
+
+
+    // Function: build
+
+    /*virtual function void build();
          upper = uvm_reg_field::type_id::create("upper");
          lower = uvm_reg_field::type_id::create("lower");
 
          upper.configure(this, 8, 8, "RW", 0, 8'h00, 1, 1, 1);
          lower.configure(this, 8, 0, "RW", 0, 8'h00, 1, 1, 1);
       endfunction*/
-   endclass
+  endclass
 
 
 
-   //--------------------------------------------------------------------
-   // Class: RegA
-   // 
-   //--------------------------------------------------------------------
+  //--------------------------------------------------------------------
+  // Class: RegA
 
-   class RegA extends uvm_reg;
-      `uvm_object_utils(RegA)
+  //--------------------------------------------------------------------
 
-      rand uvm_reg_field data; 
+  class RegA extends uvm_reg;
+    `uvm_object_utils(RegA)
 
+    rand uvm_reg_field data;
 
-      // Function: new
-      // 
-      function new(string name = "RegA");
-         super.new(name, 16, UVM_NO_COVERAGE);
-      endfunction
 
+    // Function: new
 
-      // Function: build
-      // 
-      virtual function void build();
-         data = uvm_reg_field::type_id::create("data");
+    function new(string name = "RegA");
+      super.new(name, 16, UVM_NO_COVERAGE);
+    endfunction
 
-         data.configure(this, 16, 0, "RW", 0, 16'h0000, 1, 1, 1);
-      endfunction
-   endclass
 
+    // Function: build
 
+    virtual function void build();
+      data = uvm_reg_field::type_id::create("data");
 
-   //--------------------------------------------------------------------
-   // Class: thirtytwobit
-   // 
-   //--------------------------------------------------------------------
+      data.configure(this, 16, 0, "RW", 0, 16'h0000, 1, 1, 1);
+    endfunction
+  endclass
 
-   class thirtytwobit extends uvm_reg;
-      `uvm_object_utils(thirtytwobit)
 
-      rand uvm_reg_field upper; 
-      rand uvm_reg_field lower; 
 
+  //--------------------------------------------------------------------
+  // Class: thirtytwobit
 
-      // Function: new
-      // 
-      function new(string name = "thirtytwobit");
-         super.new(name, 32, UVM_NO_COVERAGE);
-      endfunction
+  //--------------------------------------------------------------------
 
+  class thirtytwobit extends uvm_reg;
+    `uvm_object_utils(thirtytwobit)
 
-      // Function: build
-      // 
-      virtual function void build();
-         upper = uvm_reg_field::type_id::create("upper");
-         lower = uvm_reg_field::type_id::create("lower");
+    rand uvm_reg_field upper;
+    rand uvm_reg_field lower;
 
-         upper.configure(this, 16, 16, "RW", 0, 16'h0000, 1, 1, 1);
-         lower.configure(this, 16, 0, "RW", 0, 16'h0000, 1, 1, 1);
-      endfunction
-   endclass
 
+    // Function: new
 
+    function new(string name = "thirtytwobit");
+      super.new(name, 32, UVM_NO_COVERAGE);
+    endfunction
 
-   //--------------------------------------------------------------------
-   // Class: RegB
-   // 
-   //--------------------------------------------------------------------
 
-   class RegB extends uvm_reg;
-      `uvm_object_utils(RegB)
+    // Function: build
 
-      rand uvm_reg_field data; 
+    virtual function void build();
+      upper = uvm_reg_field::type_id::create("upper");
+      lower = uvm_reg_field::type_id::create("lower");
 
+      upper.configure(this, 16, 16, "RW", 0, 16'h0000, 1, 1, 1);
+      lower.configure(this, 16, 0, "RW", 0, 16'h0000, 1, 1, 1);
+    endfunction
+  endclass
 
-      // Function: new
-      // 
-      function new(string name = "RegB");
-         super.new(name, 16, UVM_NO_COVERAGE);
-      endfunction
 
 
-      // Function: build
-      // 
-      virtual function void build();
-         data = uvm_reg_field::type_id::create("data");
+  //--------------------------------------------------------------------
+  // Class: RegB
 
-         data.configure(this, 16, 0, "RW", 0, 16'h0000, 1, 1, 1);
-      endfunction
-   endclass
+  //--------------------------------------------------------------------
 
+  class RegB extends uvm_reg;
+    `uvm_object_utils(RegB)
 
+    rand uvm_reg_field data;
 
-   //--------------------------------------------------------------------
-   // Class: data_reg
-   // 
-   //--------------------------------------------------------------------
 
-   class data_reg extends uvm_reg;
-      `uvm_object_utils(data_reg)
+    // Function: new
 
-      uvm_reg_field data; 
+    function new(string name = "RegB");
+      super.new(name, 16, UVM_NO_COVERAGE);
+    endfunction
 
 
-      // Function: new
-      // 
-      function new(string name = "data_reg");
-         super.new(name, 16, UVM_NO_COVERAGE);
-      endfunction
+    // Function: build
 
+    virtual function void build();
+      data = uvm_reg_field::type_id::create("data");
 
-      // Function: build
-      // 
-      virtual function void build();
-         data = uvm_reg_field::type_id::create("data");
+      data.configure(this, 16, 0, "RW", 0, 16'h0000, 1, 1, 1);
+    endfunction
+  endclass
 
-         data.configure(this, 16, 0, "RO", 0, 16'h0000, 1, 0, 1);
-      endfunction
-   endclass
 
 
+  //--------------------------------------------------------------------
+  // Class: data_reg
 
-   //--------------------------------------------------------------------
-   // Class: user_go_bit_reg
-   // 
-   //--------------------------------------------------------------------
+  //--------------------------------------------------------------------
 
-   class user_go_bit_reg extends go_bit_reg;
-     `uvm_object_utils(user_go_bit_reg)
+  class data_reg extends uvm_reg;
+    `uvm_object_utils(data_reg)
 
-     uvm_reg_field reserved;
-     uvm_reg_field cfg1;
-     uvm_reg_field cfg2;
-     uvm_reg_field my_vector;
+    uvm_reg_field data;
 
 
-      // Function: new
-      // 
-      function new(string name = "user_go_bit_reg");
-         super.new(name, 16, UVM_NO_COVERAGE);
-      endfunction
+    // Function: new
 
+    function new(string name = "data_reg");
+      super.new(name, 16, UVM_NO_COVERAGE);
+    endfunction
 
-      // Function: build
-      // 
-      virtual function void build();
-        go_bit_build(.go_bit_lsb_pos(15), .go_bit_reset_val(0));
-        
-        reserved = uvm_reg_field::type_id::create("reserved");
-        cfg1 = uvm_reg_field::type_id::create("cfg1");
-        cfg2 = uvm_reg_field::type_id::create("cfg2");
-        my_vector = uvm_reg_field::type_id::create("my_vector");
 
-        reserved.configure(this, 9, 6, "RO", 0, '0, 1, 0, 0);
-        cfg1.configure(this, 1, 5, "RW", 0, 1'b0, 1, 1, 0);
-        cfg2.configure(this, 1, 4, "RW", 0, 1'b0, 1, 1, 0);
-        my_vector.configure(this, 4, 0, "RW", 0, 4'b0, 1, 1, 0);
-      endfunction
-   endclass
+    // Function: build
 
+    virtual function void build();
+      data = uvm_reg_field::type_id::create("data");
 
+      data.configure(this, 16, 0, "RO", 0, 16'h0000, 1, 0, 1);
+    endfunction
+  endclass
 
 
-   /* BLOCKS */
 
+  //--------------------------------------------------------------------
+  // Class: user_go_bit_reg
 
+  //--------------------------------------------------------------------
 
-   //--------------------------------------------------------------------
-   // Class: reg_block_bus_map_coverage
-   // 
-   // Coverage for the 'bus_map' in 'reg_block'
-   //--------------------------------------------------------------------
+  class user_go_bit_reg extends go_bit_reg;
+    `uvm_object_utils(user_go_bit_reg)
 
-   class reg_block_bus_map_coverage extends uvm_object;
-      `uvm_object_utils(reg_block_bus_map_coverage)
+    uvm_reg_field reserved;
+    uvm_reg_field cfg1;
+    uvm_reg_field cfg2;
+    uvm_reg_field my_vector;
 
-      covergroup ra_cov(string name) with function sample(uvm_reg_addr_t addr, bit is_read);
 
-         option.per_instance = 1;
-         option.name = name; 
+    // Function: new
 
-         ADDR: coverpoint addr {
-            bins status_reg_h = {32'h00000000};
-            bins RegA_h = {32'h00000002};
-            bins RegB_h = {32'h00000004};
-            bins thirtytwobit_h = {32'h00000008};
-            bins front_reg_h = {32'h00000010};
-            bins back_reg_h = {32'h00000012};
-            bins holding_reg_h = {32'h00000014};
-            bins data_reg_h = {32'h00000016};
-            bins apply_holding_reg_h = {32'h00000018};
-            bins user_go_bit_reg_h = {32'h0000001a};
-         }
+    function new(string name = "user_go_bit_reg");
+      super.new(name, 16, UVM_NO_COVERAGE);
+    endfunction
 
-         RW: coverpoint is_read {
-            bins RD = {1};
-            bins WR = {0};
-         }
 
-         ACCESS: cross ADDR, RW {
-            ignore_bins read_only  = binsof(ADDR) intersect {32'h00000016} && binsof(RW) intersect {0};
-         }
+    // Function: build
 
-      endgroup: ra_cov
+    virtual function void build();
+      go_bit_build(.go_bit_lsb_pos(15), .go_bit_reset_val(0));
 
-      function new(string name = "reg_block_bus_map_coverage");
-         ra_cov = new(name);
-      endfunction: new
+      reserved = uvm_reg_field::type_id::create("reserved");
+      cfg1 = uvm_reg_field::type_id::create("cfg1");
+      cfg2 = uvm_reg_field::type_id::create("cfg2");
+      my_vector = uvm_reg_field::type_id::create("my_vector");
 
-      function void sample(uvm_reg_addr_t offset, bit is_read);
-         ra_cov.sample(offset, is_read);
-      endfunction: sample
+      reserved.configure(this, 9, 6, "RO", 0, '0, 1, 0, 0);
+      cfg1.configure(this, 1, 5, "RW", 0, 1'b0, 1, 1, 0);
+      cfg2.configure(this, 1, 4, "RW", 0, 1'b0, 1, 1, 0);
+      my_vector.configure(this, 4, 0, "RW", 0, 4'b0, 1, 1, 0);
+    endfunction
+  endclass
 
-   endclass: reg_block_bus_map_coverage
 
 
 
-   //--------------------------------------------------------------------
-   // Class: reg_block
-   // 
-   // Register block
-   //--------------------------------------------------------------------
+  /* BLOCKS */
 
-   class reg_block extends uvm_reg_block;
-      `uvm_object_utils(reg_block)
 
-      rand status_reg status_reg_h; 
-      rand RegA RegA_h; 
-      rand RegB RegB_h; 
-      rand thirtytwobit thirtytwobit_h; 
-      rand front_reg front_reg_h; 
-      rand back_reg back_reg_h; 
-      rand holding_reg holding_reg_h; 
-      rand data_reg data_reg_h; 
-      rand apply_holding_reg apply_holding_reg_h;
-      rand user_go_bit_reg user_go_bit_reg_h;
-      small_mem small_mem_h; 
 
-      uvm_reg_map bus_map; 
-      reg_block_bus_map_coverage bus_map_cg;
+  //--------------------------------------------------------------------
+  // Class: reg_block_bus_map_coverage
 
+  // Coverage for the 'bus_map' in 'reg_block'
+  //--------------------------------------------------------------------
 
-      // Function: new
-      // 
-      function new(string name = "reg_block");
-         super.new(name, build_coverage(UVM_CVR_ALL));
-      endfunction
+  class reg_block_bus_map_coverage extends uvm_object;
+    `uvm_object_utils(reg_block_bus_map_coverage)
 
+    covergroup ra_cov(string name) with function sample (uvm_reg_addr_t addr, bit is_read);
 
-      // Function: build
-      // 
-      virtual function void build();
+      option.per_instance = 1;
+      option.name = name;
 
-         add_hdl_path("testbench.i_dut");
+      ADDR: coverpoint addr {
+        bins status_reg_h = {32'h00000000};
+        bins RegA_h = {32'h00000002};
+        bins RegB_h = {32'h00000004};
+        bins thirtytwobit_h = {32'h00000008};
+        bins front_reg_h = {32'h00000010};
+        bins back_reg_h = {32'h00000012};
+        bins holding_reg_h = {32'h00000014};
+        bins data_reg_h = {32'h00000016};
+        bins apply_holding_reg_h = {32'h00000018};
+        bins user_go_bit_reg_h = {32'h0000001a};
+      }
 
-         if(has_coverage(UVM_CVR_ADDR_MAP)) begin
-            bus_map_cg = reg_block_bus_map_coverage::type_id::create("bus_map_cg");
-            void'(set_coverage(UVM_CVR_ADDR_MAP));
-         end
-         status_reg_h = status_reg::type_id::create("status_reg_h");
-         status_reg_h.configure(this, null, "status_reg");
-         status_reg_h.build();
+      RW: coverpoint is_read {bins RD = {1}; bins WR = {0};}
 
-         RegA_h = RegA::type_id::create("RegA_h");
-         RegA_h.configure(this, null, "regA");
-         RegA_h.build();
+      ACCESS: cross ADDR, RW{
+        ignore_bins read_only = binsof (ADDR) intersect {32'h00000016} && binsof (RW) intersect {0};
+      }
 
-         RegB_h = RegB::type_id::create("RegB_h");
-         RegB_h.configure(this, null, "regB");
-         RegB_h.build();
+    endgroup : ra_cov
 
-         thirtytwobit_h = thirtytwobit::type_id::create("thirtytwobit_h");
-         thirtytwobit_h.configure(this, null, "thirtytwobit");
-         thirtytwobit_h.build();
+    function new(string name = "reg_block_bus_map_coverage");
+      ra_cov = new(name);
+    endfunction : new
 
-         back_reg_h = back_reg::type_id::create("back_reg_h");
-         back_reg_h.configure(this, null, "back_reg");
-         back_reg_h.build();
+    function void sample (uvm_reg_addr_t offset, bit is_read);
+      ra_cov.sample(offset, is_read);
+    endfunction : sample
 
-         front_reg_h = front_reg::type_id::create("front_reg_h");
-         front_reg_h.configure(this, null, "front_reg");
-         front_reg_h.build(back_reg_h);
+  endclass : reg_block_bus_map_coverage
 
-         holding_reg_h = holding_reg::type_id::create("holding_reg_h");
-         holding_reg_h.configure(this, null, "holding_reg");
-         holding_reg_h.build();
 
-         data_reg_h = data_reg::type_id::create("data_reg_h");
-         data_reg_h.configure(this, null, "data_reg");
-         data_reg_h.build();
 
-         apply_holding_reg_h = apply_holding_reg::type_id::create("apply_holding_reg_h");
-         apply_holding_reg_h.configure(this, null, "apply_holding_reg");
-         apply_holding_reg_h.build(holding_reg_h, data_reg_h);
+  //--------------------------------------------------------------------
+  // Class: reg_block
 
-         user_go_bit_reg_h = user_go_bit_reg::type_id::create("user_go_bit_reg_h");
-         user_go_bit_reg_h.configure(this, null);
-         user_go_bit_reg_h.add_hdl_path_slice("go_bit",   15, 1);
-         user_go_bit_reg_h.add_hdl_path_slice("cfg1",      5, 1);
-         user_go_bit_reg_h.add_hdl_path_slice("cfg2",      4, 1);
-         user_go_bit_reg_h.add_hdl_path_slice("my_vector", 0, 4);
-         user_go_bit_reg_h.build();
+  // Register block
+  //--------------------------------------------------------------------
 
-         small_mem_h = small_mem::type_id::create("small_mem_h");
-         small_mem_h.configure(this, "small_mem");
+  class reg_block extends uvm_reg_block;
+    `uvm_object_utils(reg_block)
 
-         bus_map = create_map("bus_map", 'h0, 2, UVM_LITTLE_ENDIAN);
-         default_map = bus_map;
+    rand status_reg status_reg_h;
+    rand RegA RegA_h;
+    rand RegB RegB_h;
+    rand thirtytwobit thirtytwobit_h;
+    rand front_reg front_reg_h;
+    rand back_reg back_reg_h;
+    rand holding_reg holding_reg_h;
+    rand data_reg data_reg_h;
+    rand apply_holding_reg apply_holding_reg_h;
+    rand user_go_bit_reg user_go_bit_reg_h;
+    small_mem small_mem_h;
 
-         bus_map.add_reg(status_reg_h, 32'h00000000, "RW");
-         bus_map.add_reg(RegA_h, 32'h00000002, "RW");
-         bus_map.add_reg(RegB_h, 32'h00000004, "RW");
-         bus_map.add_reg(thirtytwobit_h, 32'h00000008, "RW");
-         bus_map.add_reg(front_reg_h, 32'h00000010, "RW");
-         bus_map.add_reg(back_reg_h, 32'h00000012, "RW");
-         bus_map.add_reg(holding_reg_h, 32'h00000014, "RW");
-         bus_map.add_reg(data_reg_h, 32'h00000016, "RO");
-         bus_map.add_reg(apply_holding_reg_h, 32'h00000018, "RW");
-         bus_map.add_reg(user_go_bit_reg_h, 32'h0000001a, "RW");
-         bus_map.add_mem(small_mem_h, 32'h00000020, "RW");
+    uvm_reg_map bus_map;
+    reg_block_bus_map_coverage bus_map_cg;
 
-         lock_model();
-      endfunction
 
+    // Function: new
 
-      // Function: sample
-      // 
-      function void sample(uvm_reg_addr_t offset, bit is_read, uvm_reg_map  map);
-         if(get_coverage(UVM_CVR_ADDR_MAP)) begin
-            if(map.get_name() == "bus_map") begin
-               bus_map_cg.sample(offset, is_read);
-            end
-         end
-      endfunction: sample
+    function new(string name = "reg_block");
+      super.new(name, build_coverage(UVM_CVR_ALL));
+    endfunction
 
-   endclass
+
+    // Function: build
+
+    virtual function void build();
+
+      add_hdl_path("testbench.i_dut");
+
+      if (has_coverage(UVM_CVR_ADDR_MAP)) begin
+        bus_map_cg = reg_block_bus_map_coverage::type_id::create("bus_map_cg");
+        void'(set_coverage(UVM_CVR_ADDR_MAP));
+      end
+      status_reg_h = status_reg::type_id::create("status_reg_h");
+      status_reg_h.configure(this, null, "status_reg");
+      status_reg_h.build();
+
+      RegA_h = RegA::type_id::create("RegA_h");
+      RegA_h.configure(this, null, "regA");
+      RegA_h.build();
+
+      RegB_h = RegB::type_id::create("RegB_h");
+      RegB_h.configure(this, null, "regB");
+      RegB_h.build();
+
+      thirtytwobit_h = thirtytwobit::type_id::create("thirtytwobit_h");
+      thirtytwobit_h.configure(this, null, "thirtytwobit");
+      thirtytwobit_h.build();
+
+      back_reg_h = back_reg::type_id::create("back_reg_h");
+      back_reg_h.configure(this, null, "back_reg");
+      back_reg_h.build();
+
+      front_reg_h = front_reg::type_id::create("front_reg_h");
+      front_reg_h.configure(this, null, "front_reg");
+      front_reg_h.build(back_reg_h);
+
+      holding_reg_h = holding_reg::type_id::create("holding_reg_h");
+      holding_reg_h.configure(this, null, "holding_reg");
+      holding_reg_h.build();
+
+      data_reg_h = data_reg::type_id::create("data_reg_h");
+      data_reg_h.configure(this, null, "data_reg");
+      data_reg_h.build();
+
+      apply_holding_reg_h = apply_holding_reg::type_id::create("apply_holding_reg_h");
+      apply_holding_reg_h.configure(this, null, "apply_holding_reg");
+      apply_holding_reg_h.build(holding_reg_h, data_reg_h);
+
+      user_go_bit_reg_h = user_go_bit_reg::type_id::create("user_go_bit_reg_h");
+      user_go_bit_reg_h.configure(this, null);
+      user_go_bit_reg_h.add_hdl_path_slice("go_bit", 15, 1);
+      user_go_bit_reg_h.add_hdl_path_slice("cfg1", 5, 1);
+      user_go_bit_reg_h.add_hdl_path_slice("cfg2", 4, 1);
+      user_go_bit_reg_h.add_hdl_path_slice("my_vector", 0, 4);
+      user_go_bit_reg_h.build();
+
+      small_mem_h = small_mem::type_id::create("small_mem_h");
+      small_mem_h.configure(this, "small_mem");
+
+      bus_map = create_map("bus_map", 'h0, 2, UVM_LITTLE_ENDIAN);
+      default_map = bus_map;
+
+      bus_map.add_reg(status_reg_h, 32'h00000000, "RW");
+      bus_map.add_reg(RegA_h, 32'h00000002, "RW");
+      bus_map.add_reg(RegB_h, 32'h00000004, "RW");
+      bus_map.add_reg(thirtytwobit_h, 32'h00000008, "RW");
+      bus_map.add_reg(front_reg_h, 32'h00000010, "RW");
+      bus_map.add_reg(back_reg_h, 32'h00000012, "RW");
+      bus_map.add_reg(holding_reg_h, 32'h00000014, "RW");
+      bus_map.add_reg(data_reg_h, 32'h00000016, "RO");
+      bus_map.add_reg(apply_holding_reg_h, 32'h00000018, "RW");
+      bus_map.add_reg(user_go_bit_reg_h, 32'h0000001a, "RW");
+      bus_map.add_mem(small_mem_h, 32'h00000020, "RW");
+
+      lock_model();
+    endfunction
+
+
+    // Function: sample
+
+    function void sample (uvm_reg_addr_t offset, bit is_read, uvm_reg_map map);
+      if (get_coverage(UVM_CVR_ADDR_MAP)) begin
+        if (map.get_name() == "bus_map") begin
+          bus_map_cg.sample(offset, is_read);
+        end
+      end
+    endfunction : sample
+
+  endclass
 
 
 endpackage

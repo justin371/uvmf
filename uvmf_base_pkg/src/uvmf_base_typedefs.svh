@@ -3,14 +3,14 @@
 //   Digital Industries Software
 //   Siemens EDA
 //   All Rights Reserved Worldwide
-//
+
 //   Licensed under the Apache License, Version 2.0 (the
 //   "License"); you may not use this file except in
 //   compliance with the License.  You may obtain a copy of
 //   the License at
-//
+
 //       http://www.apache.org/licenses/LICENSE-2.0
-//
+
 //   Unless required by applicable law or agreed to in
 //   writing, software distributed under the License is
 //   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -30,4 +30,3 @@
 
 // FILE: uvmf_base_typedefs
 // This is the type defs used by <uvmf_base_pkg>.
-//

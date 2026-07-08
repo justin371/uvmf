@@ -7,12 +7,11 @@ package signal_test_pkg;
   import cpu_pc_monitor_pkg::*;
   import cpu_pc_monitor_shared_pkg::*;
 
-`include "uvm_macros.svh"
-  
-  timeunit 1ps;
-  timeprecision 1ps;
+  `include "uvm_macros.svh"
 
-`include "base_test.svh"
-`include "signal_test.svh"
-  
+  timeunit 1ps; timeprecision 1ps;
+
+  `include "base_test.svh"
+  `include "signal_test.svh"
+
 endpackage : signal_test_pkg

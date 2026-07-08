@@ -1,31 +1,31 @@
-//
+
 // File: qvip_agents_env_config.svh
-//
+
 // Generated from Mentor VIP Configurator (20200402)
 // Generated using Mentor VIP Library ( 2020.2 : 04/19/2020:18:58 )
-//
+
 class qvip_agents_env_config extends uvm_object;
     `uvm_object_utils(qvip_agents_env_config)
     // Handles for vip config for each of the QVIP instances
-    
+
     pcie_ep_cfg_t pcie_ep_cfg;
     axi4_master_0_cfg_t axi4_master_0_cfg;
     axi4_master_1_cfg_t axi4_master_1_cfg;
     axi4_slave_cfg_t axi4_slave_cfg;
     apb3_config_master_cfg_t apb3_config_master_cfg;
     // Handles for address maps
-    
+
     address_map block_c_addr_map;
-    
+
     function new
     (
         string name = "qvip_agents_env_config"
     );
         super.new(name);
     endfunction
-    
+
     extern function void initialize;
-    
+
 endclass: qvip_agents_env_config
 
 function void qvip_agents_env_config::initialize;
@@ -37,4 +37,3 @@ function void qvip_agents_env_config::initialize;
         block_c_addr_map.set( addr_map_entries );
     end
 endfunction: initialize
-

@@ -10,4 +10,3 @@ package cpu_pc_monitor_pkg;
   `include "cpu_pc_monitor_proxy.svh"
 
 endpackage : cpu_pc_monitor_pkg
-

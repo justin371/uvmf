@@ -1,30 +1,30 @@
-{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_DPI_stimgen_sequence_mtlb.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_DPI_stimgen_sequence_mtlb.sv" %}
 {% set conditional = "mtlbReady" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-// 
+
 // Generated for MTLB flow
-//
+
 //----------------------------------------------------------------------
 // Project         : {{name}} interface agent
 // Unit            : Interface DPI stimulus generation sequence
-// File            : {{name}}_DPI_stimgen_sequence.svh
+// File            : {{name}}_DPI_stimgen_sequence.sv
 //----------------------------------------------------------------------
-//     
-// DESCRIPTION: 
-// This sequences uses the DPI-C function to generate stimulus values and sends it 
+
+// DESCRIPTION:
+// This sequences uses the DPI-C function to generate stimulus values and sends it
 // to the UVM driver.
-//
+
 // ****************************************************************************
 // This sequence constructs a {{name}}_transaction and uses DPI-C to create stimulus values.
-// 
+
 class {{name}}_DPI_stimgen_sequence {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
+{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}
 {% endfor %}      )
 {% endif %}
 extends {{name}}_sequence_base {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
+{% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}
 {% endfor %}                             ) {% endif %};
 
 {%if paramDefs|length > 0%}
@@ -47,16 +47,16 @@ int cycles_to_run;   // 0: initiates forever loop.  !0: fixed number of cycles
 {% endif -%}
 {% endfor -%}
 {% endif %}
-{% endfor -%} 
+{% endfor -%}
 
 //*****************************************************************
   function new(string name = "");
-    super.new(name); 
+    super.new(name);
   endfunction: new
 
 // ****************************************************************************
 // TASK : gen_next_cycle()
-//
+
   task gen_next_cycle();
                 start_item(req);
 {% for DPIImport in DPIImports %}
@@ -75,7 +75,7 @@ int cycles_to_run;   // 0: initiates forever loop.  !0: fixed number of cycles
 {% endif -%}{% endfor -%}
     );
 {% endif %}
-{% endfor -%} 
+{% endfor -%}
 
 {% for DPIImport in DPIImports %}
 {% if DPIImport.name.endswith('_update') %}
@@ -93,12 +93,12 @@ int cycles_to_run;   // 0: initiates forever loop.  !0: fixed number of cycles
 {% endif -%}{% endfor -%}
     );
 {% endif %}
-{% endfor %} 
+{% endfor %}
 {% for DPIImport in DPIImports -%}{% for argument in DPIImport.arguments -%}
 {% if argument['unpacked_dimension'] and argument['dir'] == 'output' -%}
 {% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) %}
     req._{{argument['name']}}_{{i}}  = _{{argument['name']}}[{{i}}];
-{% endfor -%}{% endif -%}{% endfor -%}{% endfor %} 
+{% endfor -%}{% endif -%}{% endfor -%}{% endfor %}
 
 {% for DPIImport in DPIImports %}
 {% if DPIImport.name.endswith('_output') or DPIImport.name.endswith(soName) %}
@@ -122,15 +122,15 @@ endtask
 
 // ****************************************************************************
 // TASK : body()
-// This task is automatically executed when this sequence is started using the 
+// This task is automatically executed when this sequence is started using the
 // start(sequencerHandle) task.
-//
+
   task body();
 
     begin
       // Construct the transaction
-      req={{name}}_transaction{%if paramDefs|length > 0%} #( 
-{% for param in paramDefs %}                .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
+      req={{name}}_transaction{%if paramDefs|length > 0%} #(
+{% for param in paramDefs %}                .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}
 {% endfor %}               ) {% endif %}::type_id::create("req");
 
       // Call DPI-C function to initialize the persistent DPI-C values

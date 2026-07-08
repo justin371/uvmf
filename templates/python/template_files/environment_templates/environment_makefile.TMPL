@@ -19,7 +19,7 @@ COMP_{{name}}_PKG_TGT_0 = q_comp_{{name}}_env_pkg
 COMP_{{name}}_PKG_TGT_1 = v_comp_{{name}}_env_pkg
 COMP_{{name}}_PKG_TGT = $(COMP_{{name}}_PKG_TGT_$(USE_VELOCE))
 
-comp_{{name}}_env_pkg: $(COMP_{{name}}_PKG_TGT) 
+comp_{{name}}_env_pkg: $(COMP_{{name}}_PKG_TGT)
 
 q_comp_{{name}}_env_pkg: {% if uvmc_cpp_files|length > 0 %} compile_sc {% endif %} {% if DPIFiles|length > 0 %} comp_{{name}}_env_pkg_c_files {% endif %} {% for sub_env in env_pkgs %} comp_{{sub_env}}_env_pkg {% endfor %}
 
@@ -77,4 +77,3 @@ compile_sc: compile_uvmc
 {% endfor %}
 	sccom $(MACHINE_ARCH) -link -I$(UVMC_HOME)/src/connect/sc -I$(QUESTA_HOME)/includes/systemc $(EXTRA_SCCOM_LINK_ARGS) -fmessage-length=0 -fPIC -pipe -scv -DSC_INCLUDE_DYNAMIC_PROCESSES
 {% endif %}
-

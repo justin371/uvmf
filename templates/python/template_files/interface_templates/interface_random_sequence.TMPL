@@ -1,15 +1,15 @@
-{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_random_sequence.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_random_sequence.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//     
-// DESCRIPTION: 
-// This sequences randomizes the {{name}} transaction and sends it 
+
+// DESCRIPTION:
+// This sequences randomizes the {{name}} transaction and sends it
 // to the UVM driver.
-//
+
 // This sequence constructs and randomizes a {{name}}_transaction.
-// 
+
 //----------------------------------------------------------------------
 {% endblock %}
 {% block contents %}
@@ -20,7 +20,7 @@ class {{name}}_random_sequence {{macro.paramDeclare(paramDefs)|indent(6)}}
 
   // pragma uvmf custom class_item_additional begin
   // pragma uvmf custom class_item_additional end
-  
+
   //*****************************************************************
   function new(string name = "");
     super.new(name);
@@ -28,11 +28,11 @@ class {{name}}_random_sequence {{macro.paramDeclare(paramDefs)|indent(6)}}
 
   // ****************************************************************************
   // TASK : body()
-  // This task is automatically executed when this sequence is started using the 
+  // This task is automatically executed when this sequence is started using the
   // start(sequencerHandle) task.
-  //
+
   task body();
-  
+
       // Construct the transaction
       req={{name}}_transaction{{macro.paramUse(paramDefs)|indent(16)}}::type_id::create("req");
       start_item(req);

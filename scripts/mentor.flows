@@ -9,7 +9,7 @@ flows:
       vhdl: [ '.vhd', '.vhdl', '.vhp', '.vhf' ]
       c:    [ '.c', '.cpp' ]
     incassoc:
-      vlog: "+incdir+"    
+      vlog: "+incdir+"
     variables:
       pre_run: ''
       pre_run_extra: ''
@@ -44,7 +44,7 @@ flows:
       extra_pre_do: ''
       do_override: ''
       compile_only: False
-      build_only: False      
+      build_only: False
       sim_only: False
       testname_attr: ${test}
       ucdb_filename: ${test}.ucdb
@@ -55,7 +55,7 @@ flows:
       pre_do: "set IterationLimit 140000; set NoQuitOnFinish 1; coverage attribute -name TESTNAME -value ${testname_attr}; coverage save -onexit ${ucdb_filename}"
       post_do: ''
       quit_command: ''
-      using_qvip: False
+      using_vip: False
       time_resolution: ''
       suppress: '8887,2286'
       mappings: ''
@@ -85,7 +85,7 @@ flows:
       post_run: "Variable to identify script to be executed after bcr execution"
       post_run_extra: "Arguments for the post_run script"
       live: "Run interactive mode simulation instead of batch-mode"
-      test: "Specify which UVM test to invoke"    
+      test: "Specify which UVM test to invoke"
       seed: "Specify the random seed for the run"
       verbosity: "Specify the UVM verbosity of the simulation"
       log_filename: "Specify log file produced during the run"
@@ -93,7 +93,7 @@ flows:
       build_only: "When set to True, only compile and optimize the enviornment and do not execute simulation"
       sim_only: "When set to True, skip compile and optimize and attempt to execute simulation immediately"
       use_vis: "Dump Visualizer waves for RTL debug"
-      use_vis_uvm: "Dump Visualizer waves for RTL and TB debug"      
+      use_vis_uvm: "Dump Visualizer waves for RTL and TB debug"
       mem_size_log: "Memory size limit for Visualizer memory content logging"
       enable_trlog: "Enable transaction logging"
       vis_wave_filename: "Specify a wave dump file name for Visualizer"
@@ -409,4 +409,3 @@ flows:
           extra: ${run_extra}
           tops: opt
           log_filename: ${vsim_logfile_name}
-

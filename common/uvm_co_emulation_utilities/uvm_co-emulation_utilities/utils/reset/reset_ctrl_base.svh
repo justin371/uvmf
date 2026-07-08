@@ -6,12 +6,12 @@
 class reset_ctrl_base extends uvm_object;
 
   `uvm_object_utils(reset_ctrl_base)
-  
+
   string report_id = "reset_ctrl_base";
 
   event reset_asserted, reset_deasserted;
   bit   reset_active = 0;
-  
+
   //Associative array to hold counters for reset toggle hits based on
   //string index
   protected static int stats_hash[string] = '{default:0};
@@ -67,14 +67,14 @@ class reset_ctrl_base extends uvm_object;
   endfunction : set_manual_control
 
 
-  /////////////////////////////////////////////////////////////////////////////
+
   //Statistics Collection Code
-  /////////////////////////////////////////////////////////////////////////////
-  
+
+
   static function void set_stat_collection( input bit val );
     collectStats = val;
   endfunction : set_stat_collection
-  
+
   static function void count_stat( input string scope = "",
                                    input string file = "",
                                    input int unsigned line = 0);
@@ -83,7 +83,7 @@ class reset_ctrl_base extends uvm_object;
       stats_hash[str]++;
     end
   endfunction : count_stat
-  
+
   static function void print_stats();
     if (stats_hash.size == 0)
       return;
@@ -94,6 +94,5 @@ class reset_ctrl_base extends uvm_object;
       $display("Called %d times from: %s", stats_hash[i], i);
     end
   endfunction : print_stats
-  
+
 endclass : reset_ctrl_base
-    

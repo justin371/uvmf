@@ -1,13 +1,13 @@
-{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_sequence_base.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_sequence_base.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//     
-// DESCRIPTION: 
+
+// DESCRIPTION:
 // This file contains the class used as the base class for all sequences
 // for this interface.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 {% block contents %}
@@ -27,7 +27,7 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
   event new_rsp;
 
 {% if DPIImports|length > 0 %}
-  // System Verilog variables for C functions 
+  // System Verilog variables for C functions
 {% for txn in DPITransDecl %}
   {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
@@ -39,7 +39,7 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
   // ****************************************************************************
   // TASK : get_responses()
   // This task recursively gets sequence item responses from the sequencer.
-  //
+
   virtual task get_responses();
     fork
       begin
@@ -56,12 +56,12 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
   // ****************************************************************************
   // TASK : pre_start()
   // This task is called automatically when start is called with call_pre_post set to 1 (default).
-  // By calling get_responses() within pre_start() any derived sequences are automatically 
+  // By calling get_responses() within pre_start() any derived sequences are automatically
   // processing response transactions. Only un-comment this call to get_responses() if you
   // have configured the interface driver to utilize the response transaction path by setting
   // the configuration variable "return_transaction_response" to 1. Otherwise it is possible
   // to impact runtime performance and memory utilization.
-  //
+
   virtual task pre_start();
     // pragma uvmf custom pre_start begin
 //    get_responses();
@@ -84,7 +84,7 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
   // This task is called automatically when start is called.  This sequence sends
   // a req sequence item to the sequencer identified as an argument in the call
   // to start.
-  //
+
   virtual task body();
     // pragma uvmf custom body begin
   	start_item(req);
@@ -95,7 +95,7 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
   // ****************************************************************************
   // FUNCTION : new()
   // This function is the standard SystemVerilog constructor.
-  //
+
   function new( string name ="");
     super.new( name );
     // pragma uvmf custom new begin

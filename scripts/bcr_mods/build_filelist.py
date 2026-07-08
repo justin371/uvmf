@@ -7,8 +7,6 @@ import re
 
 sys.path.insert(0,os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python")
-if sys.version_info[0] < 3:
-  sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python2")
 
 from uvmf_version import version
 __version__ = version
@@ -96,7 +94,7 @@ class Builder(object):
     self.options = []
     self.source_files_tuple = []
     self.incdirs_tuple = []
-    self.options_tuple = []    
+    self.options_tuple = []
     self.parsing_stack = []
     self.top_node = None
     self.lib_data = {}
@@ -124,7 +122,7 @@ class Builder(object):
       resp = humanize_error(data_structure, e).split('\n')
       self.logger.error("While validating config file \"{}\":\n{}".format(fname,pprint.pformat(resp, indent=2)))
       sys.exit(1)
-    
+
   def read_file(self,fname,parent=None,lib_name=None):
     """ Read a provided configuration file in order to build up a file list and set of switches for the
     build. Can be called recursively if a given config file includes another config file. All paths are
@@ -201,7 +199,7 @@ class Builder(object):
     if lib:
       lib_debug_str = 'library '+lib+' '
       if lib not in self.lib_data:
-        self.lib_data[lib] = {  
+        self.lib_data[lib] = {
                                 'source_files':[],
                                 'incdirs':[],
                                 'options':[],
@@ -239,7 +237,7 @@ class Builder(object):
       id.append(norm_path)
       self.logger.debug("Added include directory \"{}\" listed in config file \"{}\"".format(norm_path,full_fname))
     else:
-      self.logger.debug("Include directory \"{}\" from config file \"{}\" already present, skipping".format(norm_path,full_fname)) 
+      self.logger.debug("Include directory \"{}\" from config file \"{}\" already present, skipping".format(norm_path,full_fname))
 
   def process_ifdef_incdir_entry(self,i,dir_name,full_fname,fname,lib_name):
     for k in i:
@@ -249,7 +247,7 @@ class Builder(object):
             self.process_incdir_entry(ii,dir_name,full_fname,fname,lib_name)
           else:
             self.process_ifdef_incdir_entry(ii,dir_name,full_fname,fname,lib_name)
-        break   
+        break
 
   def process_options_entry(self,s,dir_name,full_fname,fname,lib_name):
     if lib_name:
@@ -277,7 +275,7 @@ class Builder(object):
 
   def process_ifdef_src_entry(self,f,dir_name,full_fname,fname,lib_name):
     ## This is an ifdef/elsif/else entry. Need to test each key in order and only add underlying source when a key is found to be
-    ## True or if an 'else' clause is encountered. This is read in as OrderedDict so priority is top-to-bottom as written in 
+    ## True or if an 'else' clause is encountered. This is read in as OrderedDict so priority is top-to-bottom as written in
     ## the original YAML.  Key names are looked up in the build_defines dictionary
     for k in f:
       if (k in self.build_defines and self.build_defines[k]) or k == 'else':
@@ -442,8 +440,3 @@ class Builder(object):
         ofh.close()
         self.logger.debug("Wrote file list {}".format(output))
     return files_written
-
-
-
-
-

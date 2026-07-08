@@ -5,6 +5,8 @@ import re
 from uvmf_gen import UserError
 import yaml
 import pprint
+import stat
+import tempfile
 from uvmf_yaml import dumper, RegenValidator
 
 from voluptuous import Invalid,MultipleInvalid
@@ -13,7 +15,7 @@ from voluptuous.humanize import humanize_error
 from shutil import copyfile
 
 class Base:
-  
+
   # Replace the base directory structure with something new, maintaining the top-most path
   def replace_basedir(self, p, old_basedir, new_basedir):
     # Unfortunately we can't use a nice simple regex here safely due to OS differences (windows os.sep backslashes cause problems)
@@ -70,7 +72,7 @@ class Merge(Base):
     try:
       RegenValidator().schema(data)
     except MultipleInvalid as e:
-      resp = humanize_error(rd,e).split('\n')
+      resp = humanize_error(data,e).split('\n')
       raise UserError("Validation of regeneration YAML failed:\n{0}".format(pprint.pformat(resp,indent=2)))
     self.rd = {}
     for f in data:
@@ -105,17 +107,18 @@ class Merge(Base):
       return False
     else:
       ## Matched old_fname up with something in the data structure, which means we have a match between old and new.
-      ## In this case we will be overwriting this file with a newly merged version
-      ## First step is to delete the old file
+      ## Write beside the original and replace it only after a complete merge.
       try:
-        os.remove(self.old_fname)
-      except:
-        raise UserError("Unable to overwrite source file {0} with merged data. Permissions issue?".format(self.old_fname))
-      # Now re-open the same file for recreation
-      try:
-        self.ofs = open(self.old_fname, 'w')
+        fd,self.tmp_fname = tempfile.mkstemp(
+          prefix='.'+os.path.basename(self.old_fname)+'.',
+          suffix='.uvmf_merge_tmp',
+          dir=os.path.dirname(self.old_fname),
+          text=True,
+        )
+        self.old_mode = stat.S_IMODE(os.stat(self.old_fname).st_mode)
+        self.ofs = os.fdopen(fd,'w')
       except IOError:
-        raise UserError("Unable to create output file {0}".format(outfile))
+        raise UserError("Unable to create temporary merge file for {0}".format(self.old_fname))
       ## Function returns true if we are now processing the file contents
       return True
 
@@ -178,7 +181,11 @@ class Merge(Base):
           else:
             self.missing_blocks[self.old_fname].append(l)
         else:
+          if os.path.exists(self.tmp_fname):
+            os.remove(self.tmp_fname)
           raise UserError('Potential loss of hand edits:\n  File: {0}\n  Label: "{1}"\nUse --merge_skip_missing_blocks to proceed and produce list of labels at end'.format(self.old_fname,l))
+    os.chmod(self.tmp_fname,self.old_mode)
+    os.replace(self.tmp_fname,self.old_fname)
 
   def parse_file(self,fname):
     self.regen.parse_file(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,block_outside_fn=self.block_outside,post_open_fn=self.file_end)

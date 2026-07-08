@@ -1,0 +1,189 @@
+#! /usr/bin/env python3
+
+from pathlib import Path
+from types import SimpleNamespace
+import os
+import stat
+import sys
+import tempfile
+import unittest
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0,str(REPO_ROOT / "templates" / "python"))
+sys.path.insert(0,str(REPO_ROOT / "templates" / "python" / "python3"))
+
+from uvmf_gen import BaseGeneratorClass, UserError
+from uvmf_yaml.regen import Merge
+
+
+class RegenerationSafetyTest(unittest.TestCase):
+  def make_generator(self,root):
+    generator = BaseGeneratorClass("soc","bench")
+    generator.root = str(root)
+    generator.bench_location = "project_benches"
+    generator.options = SimpleNamespace(quiet=True)
+    return generator
+
+  def test_clean_removes_only_approved_outputs(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      bench = root / "project_benches" / "soc"
+      keep_files = [
+        bench / "tb" / "BUILD",
+        bench / "tb" / "tests" / "src" / "soc_base_test.svh",
+        bench / "tb" / "custom" / "user_sequence.svh",
+        root / "verification_ip" / "environment_packages" / "soc_env_pkg" / "BUILD",
+        root / "verification_ip" / "custom" / "keep.sv",
+      ]
+      obsolete_files = [
+        bench / "tb" / "tests" / "src" / "register_test.sv",
+        bench / "tb" / "tests" / "src" / "example_derived_test.sv",
+        root / "verification_ip" / "legacy.f",
+        root / "verification_ip" / "compile.do",
+        root / "verification_ip" / "interface_packages" / "foo_pkg" / "Makefile",
+        root / "verification_ip" / "environment_packages" / "bar_env_pkg" / "Makefile",
+        root / ".project",
+      ]
+      obsolete_dirs = [
+        bench / "sim",
+        bench / "rtl",
+        bench / "docs",
+        bench / "tb" / "sequences",
+      ]
+
+      for path in keep_files + obsolete_files:
+        path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_text("sentinel\n",encoding="utf-8")
+      for path in obsolete_dirs:
+        path.mkdir(parents=True,exist_ok=True)
+        (path / "old_generated_file.sv").write_text("obsolete\n",encoding="utf-8")
+
+      self.make_generator(root).cleanupApprovedOutputs()
+
+      self.assertTrue(all(path.is_file() for path in keep_files))
+      self.assertTrue(all(not path.exists() for path in obsolete_files))
+      self.assertTrue(all(not path.exists() for path in obsolete_dirs))
+
+  def test_atomic_output_replaces_complete_file(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      output = Path(tmp) / "generated.sv"
+      output.write_text("old content\n",encoding="utf-8")
+      os.chmod(output,stat.S_IRUSR | stat.S_IWUSR)
+
+      self.make_generator(Path(tmp)).writeOutputAtomically(
+        str(output),"new content\n"
+      )
+
+      self.assertEqual(output.read_text(encoding="utf-8"),"new content\n")
+
+  def test_clean_rejects_path_outside_destination(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      parent = Path(tmp)
+      root = parent / "output"
+      outside = parent / "outside" / "sim"
+      root.mkdir()
+      outside.mkdir(parents=True)
+      sentinel = outside / "keep.sv"
+      sentinel.write_text("must remain\n",encoding="utf-8")
+
+      generator = self.make_generator(root)
+      generator.bench_location = ".."
+      generator.name = "outside"
+
+      with self.assertRaises(UserError):
+        generator.cleanupApprovedOutputs()
+      self.assertEqual(sentinel.read_text(encoding="utf-8"),"must remain\n")
+
+  def test_default_profile_skips_only_generated_makefiles(self):
+    generator = self.make_generator(Path.cwd())
+    generator.options = SimpleNamespace(
+      quiet=True,
+      target_profile="vcs_xcelium_synopsys_vip",
+      minimal_output=False,
+      skip_bench_sim=False,
+      skip_bench_rtl=False,
+      skip_bench_docs=False,
+      skip_legacy_filelists=False,
+      skip_questa_scripts=False,
+      skip_ide_metadata=False,
+      with_bench_sequences=False,
+    )
+    generator.gen_type = "environment"
+
+    self.assertTrue(generator.skipTemplateOutput("verification_ip/environment_packages/foo_env_pkg/Makefile"))
+    self.assertTrue(generator.skipTemplateOutput("verification_ip/interface_packages/foo_pkg/Makefile"))
+    self.assertFalse(generator.skipTemplateOutput("verification_ip/environment_packages/foo_env_pkg/src/foo_env_configuration.sv"))
+    self.assertFalse(generator.skipTemplateOutput("verification_ip/environment_packages/foo_env_pkg/BUILD"))
+    generator.gen_type = "bench"
+    self.assertFalse(generator.skipTemplateOutput("project_benches/soc/tb/BUILD"))
+
+  def test_clean_removes_only_stale_generated_svh_replaced_by_sv(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      old_src = root / "verification_ip" / "environment_packages" / "soc_env_pkg" / "src"
+      old_src.mkdir(parents=True,exist_ok=True)
+      stale = old_src / "soc_env_configuration.svh"
+      replacement = old_src / "soc_env_configuration.sv"
+      header = old_src / "soc_env_typedefs.svh"
+      user_file = old_src / "custom_logic.svh"
+      stale.write_text("`ifndef _SOC_ENV_CONFIGURATION__SVH__\n// Created with uvmf_gen version 2023.4_2\n`endif // _SOC_ENV_CONFIGURATION__SVH__\n",encoding="utf-8")
+      replacement.write_text("module dummy; endmodule\n",encoding="utf-8")
+      header.write_text("`ifndef _SOC_ENV_TYPEDEFS__SVH__\n// Created with uvmf_gen version 2023.4_2\n`endif // _SOC_ENV_TYPEDEFS__SVH__\n",encoding="utf-8")
+      user_file.write_text("// user-owned file\n",encoding="utf-8")
+
+      self.make_generator(root).cleanupApprovedOutputs()
+
+      self.assertFalse(stale.exists())
+      self.assertTrue(replacement.exists())
+      self.assertTrue(header.exists())
+      self.assertTrue(user_file.exists())
+
+  def test_generated_svh_whitelist_is_explicit(self):
+    generator = self.make_generator(Path.cwd())
+    self.assertTrue(generator.keepGeneratedSvh("src/foo_macros.svh"))
+    self.assertTrue(generator.keepGeneratedSvh("src/foo_typedefs.svh"))
+    self.assertTrue(generator.keepGeneratedSvh("src/foo_env_typedefs.svh"))
+    self.assertFalse(generator.keepGeneratedSvh("src/foo_sequence_base.svh"))
+    self.assertFalse(generator.keepGeneratedSvh("src/foo_driver.svh"))
+
+  def test_failed_merge_preserves_original_file(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      old_root = root / "old"
+      new_root = root / "new"
+      old_root.mkdir()
+      new_root.mkdir()
+      old_file = old_root / "test.svh"
+      new_file = new_root / "test.svh"
+      old_file.write_text("original content\n",encoding="utf-8")
+      new_file.write_text("generated content\n",encoding="utf-8")
+
+      merge = Merge(
+        outdir=str(old_root),
+        skip_missing_blocks=False,
+        new_root=str(new_root),
+        old_root=str(old_root),
+        quiet=True,
+      )
+      merge.rd = {
+        str(old_file.resolve()): {
+          "custom": {
+            "content": "user content\n",
+            "begin_line": 1,
+            "end_line": 3,
+          }
+        }
+      }
+
+      self.assertTrue(merge.file_begin(str(new_file.resolve())))
+      merge.ofs.write("incomplete merged content\n")
+      with self.assertRaises(UserError):
+        merge.file_end(str(new_file.resolve()))
+
+      self.assertEqual(old_file.read_text(encoding="utf-8"),"original content\n")
+      self.assertEqual(list(old_root.glob("*.uvmf_merge_tmp")),[])
+
+
+if __name__ == "__main__":
+  unittest.main()

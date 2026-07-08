@@ -1,0 +1,9 @@
+{% set fname = "{{bench_location}}/{{name}}/tb/parameters/BUILD" %}
+load("@rules_verilog//verilog:defs.bzl", "verilog_dv_library")
+
+package(default_visibility = ["//visibility:public"])
+
+verilog_dv_library(
+    name = "pkg",
+    srcs = glob(["*.sv*"]),
+)

@@ -1,0 +1,43 @@
+{% set fname = "{{bench_location}}/{{name}}/tb/tests/BUILD" %}
+load("@rules_verilog//verilog:defs.bzl", "verilog_dv_library", "verilog_dv_test_cfg")
+load(":demo_tests.bzl", "demo_test_configs")
+
+package(default_visibility = ["//visibility:public"])
+
+verilog_dv_library(
+    name = "tests",
+    srcs = glob([
+        "src/*.sv*",
+        "*.sv*",
+    ]),
+    in_flist = [
+        "//hw/dv/project_benches/{{name}}/tb/testbench:tb_defines.svh",
+    ] + glob([
+        "*_pkg.sv",
+    ]),
+    deps = [
+        "@uvmf//uvmf_base_pkg:pkg",
+        "//hw/dv/project_benches/{{name}}/tb/parameters:pkg",
+        "//hw/dv/verification_ip/environment_packages/{{env_name}}_env_pkg:pkg",
+        # pragma uvmf custom deps_additional begin
+        # pragma uvmf custom deps_additional end
+    ],
+)
+
+verilog_dv_test_cfg(
+    name = "base",
+    abstract = True,
+    sim_opts = {
+        "+PLLTS12FFCLJFRACB_FORCE_VDDREG": "",
+        "+wdog=": "1000000",
+        "+assert_reinitialization_delay=": "50",
+        "+ctxlen=": "50",
+        "+filelen=": "30",
+    },
+    tb = "//hw/dv/project_benches/{{name}}/tb:{{name}}_tb",
+)
+
+demo_test_configs()
+
+# pragma uvmf custom test_configs begin
+# pragma uvmf custom test_configs end

@@ -9,8 +9,6 @@ from distutils.util import strtobool
 
 sys.path.insert(0,os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python")
-if sys.version_info[0] < 3:
-  sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python2")
 
 from uvmf_version import version
 __version__ = version
@@ -35,7 +33,7 @@ class Flow(object):
     self.parsing_stack = []
     self.inheritance_stack = []
     self.variable_stack = []
-    self.variable_pattern = re.compile("^(.*?)(\${(.+?)})(.*?)$")
+    self.variable_pattern = re.compile(r"^(.*?)(\${(.+?)})(.*?)$")
     command_schema = {
       Optional('description'): str,
       Optional('variables'): dict,
@@ -51,7 +49,7 @@ class Flow(object):
       Optional('command_strings'): [ str ],
       Optional('command_module'): str,
       Optional('command_package'): str,
-    }      
+    }
     flow_schema = {
       Required('order'): int,
       Required('description'): str,
@@ -207,7 +205,7 @@ class Flow(object):
           pass
         self.variable_stack.pop()
         return
-      ## Otherwise, we have references to other variables that must be elaborated. 
+      ## Otherwise, we have references to other variables that must be elaborated.
       begin = m.group(1)
       end = m.group(4)
       var = m.group(3)
@@ -291,7 +289,7 @@ class Flow(object):
         elif isinstance(var_value,list):
           self.drill_list(flow_name,step_name,var_name,var_value)
         else:
-          self.elaborate_variable(flow_name,step_name,var_name,step['variables'],listing=listing)     
+          self.elaborate_variable(flow_name,step_name,var_name,step['variables'],listing=listing)
 
   def build_commands(self,flow_name,step_names,options_tuple):
     """
@@ -386,7 +384,7 @@ class Flow(object):
         self.data['options']['filelist_build_defines'][variable_name] = override_value
         self.logger.debug("Setting build define \"{}\" to \"{}\"".format(variable_name,override_value))
         continue
-      ## Search for variable name across all steps. 
+      ## Search for variable name across all steps.
       if 'variables' in self.data['flows'][flow] and variable_name in self.data['flows'][flow]['variables']:
         ## Found the override in the flow-level variable list. Try to override across all steps
         self.data['flows'][flow]['variables'][variable_name] = override_value

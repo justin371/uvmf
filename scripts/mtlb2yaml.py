@@ -4,8 +4,6 @@ import re
 import sys
 import os
 
-##RDO if sys.version_info[0] < 3:
-##RDO     sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python2")
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python3")
 
 try:
@@ -25,10 +23,10 @@ sizes = {'bit': 1,
          'byte': 8,
          'byte unsigned': 8,
          'shortint': 16,
-         'shortint unsigned': 16, 
+         'shortint unsigned': 16,
          'int': 32,
          'int unsigned': 32,
-         'longint': 64,  
+         'longint': 64,
          'longint unsigned': 64
          }
 
@@ -38,20 +36,20 @@ def calc_port_size(funcType, packedList):
     except KeyError:
         print("Error: base type " + funcType + " not known")
         quit(1)
-    
+
     #Comment these out since we are not including unpacked sizes
     # for entry in unpackedList:
     #     res = res * sizeOfEntry(entry)
     for entry in packedList:
         res = res * sizeOfEntry(entry)
     return res
-    
+
 
 def sizeOfEntry(entry):
     entry = entry[1:-1]
     entry = entry.split(':')
     if (len(entry) > 1 ):
-        res = abs(int(entry[0])-int(entry[1])) + 1  
+        res = abs(int(entry[0])-int(entry[1])) + 1
     else:
         res = int(entry[0])
     return res
@@ -62,7 +60,7 @@ def getCFiles(directory):
     for file in dir_list:
         if file.endswith('.c'):
             res.append(file)
-    
+
     return res
 
 def parseLine(s):
@@ -167,7 +165,7 @@ with open(sv_pkg, 'r') as i:
     lines = i.readlines()
     #need to build function blocks like above
     functions = []
-    
+
     for line in lines:
         if(line.startswith("import")):
             functions.append(line)
@@ -211,7 +209,7 @@ if(stim_name != None):
         lines = i.readlines()
         #need to build function blocks like above
         functions = []
-        
+
         for line in lines:
             if(line.startswith("import")):
                 functions.append(line)
@@ -220,7 +218,7 @@ if(stim_name != None):
 
     for fcn in functions:
         stimDpiFunctions['svFunctions'].append(parseFunction(fcn))
-   
+
 data = {}
 interfaces = {}
 input_if = {}
@@ -235,7 +233,7 @@ for i in dpiFunctions['svFunctions'][2]['parms']:
     if(first == 0 and i['direction'] == 'input'):
         if (i['unpacked-size'] == []):
                 portName = i['name']
-                input_if['ports'].append({'name':portName, 
+                input_if['ports'].append({'name':portName,
                                     'width':str(calc_port_size(i['type'],i['packed-size'])),
                                     'dir':'output'})
                 input_if['transaction_vars'].append({  'name':portName,
@@ -245,13 +243,13 @@ for i in dpiFunctions['svFunctions'][2]['parms']:
                                                     'iscompare':'True'})
         else:
             for j in range(sizeOfEntry(i['unpacked-size'][0])):
-                
-                
+
+
                 portName = i['name']+'_'+str(j)
-                input_if['ports'].append({'name':portName, 
+                input_if['ports'].append({'name':portName,
                                     'width':str(calc_port_size(i['type'],i['packed-size'])),
                                     'dir':'output'})
-                
+
                 type_s = i['type'] + ' '.join(i['packed-size'])
                 input_if['transaction_vars'].append({  'name':portName,
                                                     #check for multiple dimensions
@@ -283,19 +281,19 @@ if stim_name != None:
         s = "("
         for parm in cFunc['cParms']:
             s = s + " " + parm['type'] + parm['parmName'] + ','
-        s = s[:-1]    
+        s = s[:-1]
         s = s + " )"
         v['c_args'] = s
         #svArgs
         v['sv_args'] = []
         for parm in svFunc['parms']:
             v['sv_args'].append({'name': parm['name'],
-                                'type': parm['type'] + ' ' + ''.join(parm['packed-size']), 
-                                'unpacked_dimension': ''.join(parm['unpacked-size']), 
+                                'type': parm['type'] + ' ' + ''.join(parm['packed-size']),
+                                'unpacked_dimension': ''.join(parm['unpacked-size']),
                                 'dir': parm['direction']
                                 })
 
-        
+
         input_if['dpi_define']['imports'].append(v)
         i = i+1
 
@@ -368,7 +366,7 @@ for svFunc in dpiFunctions['svFunctions']:
     s = "("
     for parm in cFunc['cParms']:
         s = s + " " + parm['type'] + parm['parmName'] + ','
-    s = s[:-1]    
+    s = s[:-1]
     s = s + " )"
     v['c_args'] = s
     #svArgs
@@ -376,18 +374,18 @@ for svFunc in dpiFunctions['svFunctions']:
     for parm in svFunc['parms']:
         if parm['unpacked-size']== []:
             v['sv_args'].append({'name': parm['name'],
-                                'type': parm['type'] + ' ' + ''.join(parm['packed-size']), 
-                                # 'unpacked_dimension': ''.join(parm['unpacked-size']), 
+                                'type': parm['type'] + ' ' + ''.join(parm['packed-size']),
+                                # 'unpacked_dimension': ''.join(parm['unpacked-size']),
                                 'dir': parm['direction']
                                 })
         else:
             v['sv_args'].append({'name': parm['name'],
-                                'type': parm['type'] + ' ' + ''.join(parm['packed-size']), 
-                                'unpacked_dimension': ''.join(parm['unpacked-size']), 
+                                'type': parm['type'] + ' ' + ''.join(parm['packed-size']),
+                                'unpacked_dimension': ''.join(parm['unpacked-size']),
                                 'dir': parm['direction']
                                 })
 
-    
+
     matlab_env['dpi_define']['imports'].append(v)
     i = i+1
 
@@ -422,6 +420,3 @@ data['uvmf']['benches'] = benches
 import yaml
 with open('output_mtlb.yaml', 'w') as outfile:
     yaml.dump(data, outfile, default_flow_style=False,width=float('inf'))
-
-
-

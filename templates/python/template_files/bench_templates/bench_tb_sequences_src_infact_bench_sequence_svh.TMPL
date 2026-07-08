@@ -1,13 +1,13 @@
-{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{src_dir}}infact_{{name}}_bench_sequence_base.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{src_dir}}infact_{{name}}_bench_sequence_base.sv" %}
 {% set conditional = "infact_enabled" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//                                          
-// DESCRIPTION: This file contains the infact sequence for generating 
+
+// DESCRIPTION: This file contains the infact sequence for generating
 //    all specified scenarios without redundancy.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 

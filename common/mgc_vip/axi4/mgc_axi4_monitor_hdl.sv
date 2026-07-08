@@ -1,19 +1,21 @@
 module mgc_axi4_monitor_hdl #(
-   int ADDR_WIDTH  = 32,
-   int RDATA_WIDTH = 32,
-   int WDATA_WIDTH = 32,
-   int ID_WIDTH    = 4,
-   int USER_WIDTH  = 4,
-   int REGION_MAP_SIZE = 16,
-   string VIP_IF_UVM_NAME,
-   string VIP_IF_UVM_CONTEXT,
-   int BURST_BUFFER = 16
-) (mgc_axi4_signal_if pin_if); //pragma attribute mgc_axi4_monitor_hdl partition_module_xrtl
+    int ADDR_WIDTH  = 32,
+    int RDATA_WIDTH = 32,
+    int WDATA_WIDTH = 32,
+    int ID_WIDTH    = 4,
+    int USER_WIDTH  = 4,
+    int REGION_MAP_SIZE = 16,
+    string VIP_IF_UVM_NAME,
+    string VIP_IF_UVM_CONTEXT,
+    int BURST_BUFFER = 16
+) (
+    mgc_axi4_signal_if pin_if
+);  //pragma attribute mgc_axi4_monitor_hdl partition_module_xrtl
 
 `ifdef XRTL
 
-   // Instantiate VTL XRTL BFM
-   mgc_xrtl_axi4__monitor #(
+  // Instantiate VTL XRTL BFM
+  mgc_xrtl_axi4__monitor #(
       .AXI4_ADDRESS_WIDTH(ADDR_WIDTH),
       .AXI4_RDATA_WIDTH(RDATA_WIDTH),
       .AXI4_WDATA_WIDTH(WDATA_WIDTH),
@@ -21,7 +23,7 @@ module mgc_axi4_monitor_hdl #(
       .AXI4_USER_WIDTH(USER_WIDTH),
       .AXI4_REGION_MAP_SIZE(REGION_MAP_SIZE),
       .BURST_BUFFER(BURST_BUFFER)
-   ) vip_module (
+  ) vip_module (
       .ACLK(pin_if.ACLK),
       .ARESETn(pin_if.ARESETn),
       .AWVALID(pin_if.AWVALID),
@@ -68,12 +70,12 @@ module mgc_axi4_monitor_hdl #(
       .BID(pin_if.BID),
       .BUSER(pin_if.BUSER),
       .BREADY(pin_if.BREADY)
-   );
+  );
 
 `else
 
-   // Instantiate QVIP connectivity module
-   axi4_monitor #(
+  // Instantiate QVIP connectivity module
+  axi4_monitor #(
       .ADDR_WIDTH(ADDR_WIDTH),
       .RDATA_WIDTH(RDATA_WIDTH),
       .WDATA_WIDTH(WDATA_WIDTH),
@@ -82,7 +84,7 @@ module mgc_axi4_monitor_hdl #(
       .REGION_MAP_SIZE(REGION_MAP_SIZE),
       .IF_NAME(VIP_IF_UVM_NAME),
       .PATH_NAME(VIP_IF_UVM_CONTEXT)
-   ) vip_module (
+  ) vip_module (
       .ACLK(pin_if.ACLK),
       .ARESETn(pin_if.ARESETn),
       .AWVALID(pin_if.AWVALID),
@@ -129,8 +131,8 @@ module mgc_axi4_monitor_hdl #(
       .BID(pin_if.BID),
       .BUSER(pin_if.BUSER),
       .BREADY(pin_if.BREADY)
-   );    
+  );
 
 `endif
 
-endmodule: mgc_axi4_monitor_hdl
+endmodule : mgc_axi4_monitor_hdl

@@ -3,15 +3,17 @@
 
 {% block description %}
 //----------------------------------------------------------------------
-//
+
 // DESCRIPTION: This package contains all tests currently written for
 //     the simulation project.  Once compiled, any test can be selected
 //     from the vsim command line using +UVM_TESTNAME=yourTestNameHere
-//
+
 // CONTAINS:
 //     -<test_top>
+{% if use_bench_sequences %}
 //     -<example_derived_test>
-//
+{% endif %}
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -23,11 +25,9 @@ package {{name}}_tests_pkg;
    import uvmf_base_pkg::*;
    import {{name}}_parameters_pkg::*;
    import {{env_name}}_env_pkg::*;
+{% if use_bench_sequences %}
    import {{name}}_sequences_pkg::*;
-{% for bfm in bfm_pkgs %}
-   import {{bfm}}_pkg::*;
-   import {{bfm}}_pkg_hdl::*;
-{% endfor %}
+{% endif %}
 {% for agent in qvip_bfm_pkgs %}
    import {{agent}}_pkg::*;
 {% endfor %}
@@ -42,14 +42,16 @@ package {{name}}_tests_pkg;
 
    `include "uvm_macros.svh"
 
-  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional begin
   // pragma uvmf custom package_imports_additional end
 
-   `include "{{src_dir}}test_top.svh"
-   `include "{{src_dir}}register_test.svh"
-   `include "{{src_dir}}example_derived_test.svh"
+   `include "{{src_dir}}test_top.sv"
+{% if use_bench_sequences %}
+   `include "{{src_dir}}register_test.sv"
+   `include "{{src_dir}}example_derived_test.sv"
+{% endif %}
 {% if inFactEnabled %}
-   `include "{{src_dir}}infact_test_base.svh"
+   `include "{{src_dir}}infact_test_base.sv"
 {% endif %}
 
   // pragma uvmf custom package_item_additional begin

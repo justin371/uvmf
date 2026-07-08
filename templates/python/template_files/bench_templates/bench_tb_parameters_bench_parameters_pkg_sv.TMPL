@@ -3,9 +3,9 @@
 
 {% block description %}
 //----------------------------------------------------------------------
-//
+
 // DESCRIPTION: This package contains test level parameters
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -16,16 +16,16 @@ package {{name}}_parameters_pkg;
 
   import uvmf_base_pkg_hdl::*;
 
-  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional begin
   // pragma uvmf custom package_imports_additional end
 
 {% for param in paramDefs %}
   parameter {{param.type}} {{param.name}} = {{param.value}};
-{% endfor %}
+{% endfor -%}
 
   // These parameters are used to uniquely identify each interface.  The monitor_bfm and
-  // driver_bfm are placed into and retrieved from the uvm_config_db using these string 
-  // names as the field_name. The parameter is also used to enable transaction viewing 
+  // driver_bfm are placed into and retrieved from the uvm_config_db using these string
+  // names as the field_name. The parameter is also used to enable transaction viewing
   // from the command line for selected interfaces using the UVM command line processing.
 {% if useDpiLink %}
 {% for bfm in bfms %}

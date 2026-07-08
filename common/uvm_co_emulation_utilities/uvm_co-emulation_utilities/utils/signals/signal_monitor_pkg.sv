@@ -7,5 +7,3 @@ package signal_monitor_pkg;
   `include "signal_monitor_proxy.svh"
 
 endpackage : signal_monitor_pkg
-
-

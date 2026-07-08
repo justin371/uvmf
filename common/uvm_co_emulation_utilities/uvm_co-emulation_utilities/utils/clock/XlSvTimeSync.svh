@@ -19,38 +19,45 @@
 //  makes no claims about any material contained in this file.              //
 //--------------------------------------------------------------------------//
 
-`ifndef _XlSvTimeSync_svh_ // {
+`ifndef _XlSvTimeSync_svh_  // {
 `define _XlSvTimeSync_svh_
 
 //____________________                                       ________________
 // class XlSvTimeSync \_____________________________________/ johnS 6-15-2010
 //---------------------------------------------------------------------------
 
-class XlSvTimeSync; // {
+class XlSvTimeSync;  // {
 
   //private:
-    local event dIsAdvanceDone;
-    local longint unsigned dScheduledClock;
+  local event dIsAdvanceDone;
+  local longint unsigned dScheduledClock;
 
   //public:
 
-    function new(); endfunction
+  function new();
+  endfunction
 
-    //---------------------------------------------------------
-    // accessors
+  //---------------------------------------------------------
+  // accessors
 
-    function void setScheduledClock( longint unsigned scheduledClock );
-        dScheduledClock = scheduledClock; endfunction
-    function longint unsigned scheduledClock();
-        scheduledClock = dScheduledClock; endfunction
+  function void setScheduledClock(longint unsigned scheduledClock);
+    dScheduledClock = scheduledClock;
+  endfunction
+  function longint unsigned scheduledClock();
+    scheduledClock = dScheduledClock;
+  endfunction
 
-    task waitForSync(); @dIsAdvanceDone; endtask
-    function void post(); ->dIsAdvanceDone; endfunction
+  task waitForSync();
+    @dIsAdvanceDone;
+  endtask
+  function void post();
+    ->dIsAdvanceDone;
+  endfunction
 
   function string sprint();
     return $sformatf("dScheduledClock: %0d", dScheduledClock);
   endfunction : sprint
-  
-endclass // }
 
-`endif // } _XlSvTimeSync_svh_
+endclass  // }
+
+`endif  // } _XlSvTimeSync_svh_

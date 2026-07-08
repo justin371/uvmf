@@ -4,18 +4,18 @@
 
 {% block description %}
 //----------------------------------------------------------------------
-//     
+
 // PACKAGE: This file defines all of the files contained in the
 //    environment package that will run on the host simulator.
-//
+
 // CONTAINS:
-//     - <{{name}}_configuration.svh>
-//     - <{{name}}_environment.svh>
-//     - <{{name}}_env_sequence_base.svh>
+//     - <{{name}}_configuration.sv>
+//     - <{{name}}_environment.sv>
+//     - <{{name}}_env_sequence_base.sv>
 {% for acName in acTypes %}
-//     - <{{acName}}.svh>
+//     - <{{acName}}.sv>
 {% endfor %}
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -49,7 +49,7 @@ package {{name}}_env_pkg;
 {% endfor %}
 {% for DPIImport in DPIImports %}
   import "DPI-C" context function {{DPIImport.svType}} {{DPIImport.name}} ({% for argument in DPIImport.arguments %}{{argument['dir']}} {{argument['type']}} {{argument['name']}} {% if argument['unpacked_dimension'] %}{{argument['unpacked_dimension']}}{% endif %} {% if not loop.last %},{% endif %}{% endfor %});
-{% endfor %} 
+{% endfor %}
 {% for impdecl in impDecls %}
   `uvm_analysis_imp_decl(_{{impdecl}})
 {% endfor %}
@@ -63,12 +63,11 @@ package {{name}}_env_pkg;
 {% endfor %}
 
   `include "{{src_dir}}{{name}}_env_typedefs.svh"
-  `include "{{src_dir}}{{name}}_env_configuration.svh"
+  `include "{{src_dir}}{{name}}_env_configuration.sv"
 {% for acName in acTypes %}
-  `include "{{src_dir}}{{acName}}.svh"
+  `include "{{src_dir}}{{acName}}.sv"
 {% endfor %}
-  `include "{{src_dir}}{{name}}_environment.svh"
-  `include "{{src_dir}}{{name}}_env_sequence_base.svh"
+  `include "{{src_dir}}{{name}}_env_sequence_base.sv"
 
   // pragma uvmf custom package_item_additional begin
   // UVMF_CHANGE_ME : When adding new environment level sequences to the src directory
@@ -76,6 +75,11 @@ package {{name}}_env_pkg;
   //    compiled as part of the environment package.  Be sure to place
   //    the new sequence after any base sequence of the new sequence.
   // pragma uvmf custom package_item_additional end
+
+  `include "{{src_dir}}{{name}}_environment.sv"
+
+  // pragma uvmf custom package_item_after_environment begin
+  // pragma uvmf custom package_item_after_environment end
 
 endpackage
 

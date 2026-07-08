@@ -1,7 +1,7 @@
-# The block_c bench instantiates the block_c environment as it's top-level.
-# That environment incorporates a QVIP sub-environment produced by the QVIP
-# Configurator tool. Due to the use of QVIP, some QVIP packages must be imported
-# as part of the YAML.
+# The block_c bench instantiates the block_c environment as its top-level.
+# That environment incorporates a legacy VIP sub-environment produced by the
+# VIP configurator tool. Due to the use of legacy VIP, some VIP packages must
+# be imported as part of the YAML.
 uvmf:
   benches:
     "block_c":

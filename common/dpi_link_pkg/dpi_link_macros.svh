@@ -1,13 +1,13 @@
 //---------------------------------------------------------------------------
-// Copyright 2014 Mentor Graphics Corporation 
-//    All Rights Reserved 
-// 
-// THIS WORK CONTAINS TRADE SECRET 
-// AND PROPRIETARY INFORMATION WHICH IS THE 
-// PROPERTY OF MENTOR GRAPHICS 
-// CORPORATION OR ITS LICENSORS AND IS 
-// SUBJECT TO LICENSE TERMS. 
-// 
+// Copyright 2014 Mentor Graphics Corporation
+//    All Rights Reserved
+
+// THIS WORK CONTAINS TRADE SECRET
+// AND PROPRIETARY INFORMATION WHICH IS THE
+// PROPERTY OF MENTOR GRAPHICS
+// CORPORATION OR ITS LICENSORS AND IS
+// SUBJECT TO LICENSE TERMS.
+
 //---------------------------------------------------------------------------
 //   WARRANTY:
 //   Use all material in this file at your own risk.  Mentor Graphics, Corp.
@@ -27,11 +27,10 @@
       std_path = dpi_link_pkg::standardized_path(path); \
       pool_h = dpi_link_proxy_pool::get_global_pool(); \
       if (!pool_h.exists(std_path)) begin \
-	 proxy_h = new(std_path); \
-	 pool_h.add(std_path, proxy_h);    end \
+   proxy_h = new(std_path); \
+   pool_h.add(std_path, proxy_h);    end \
       else $cast(proxy_h, pool_h.get(std_path)); \
       return proxy_h; \
    endfunction : get \
 
 `endif
-

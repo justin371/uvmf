@@ -1,11 +1,11 @@
 ## To instantiate this subenv in a higher level, use this structure:
-##  qvip_subenvs :
+##  vip_subenvs :
 ##    - { name: "<instance_name_of_subenv>", type: "qvip_agents" }
 uvmf:
-  qvip_library:
+  vip_library:
     version: '2019.2'
     date: '04/17/2019:09:33'
-  qvip_environments:
+  vip_environments:
      "qvip_agents":
         agents:
           - name: 'pcie_ep'

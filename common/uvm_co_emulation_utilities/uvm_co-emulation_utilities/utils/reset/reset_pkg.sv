@@ -1,8 +1,7 @@
 package reset_pkg;
-  
-  timeunit 1fs;
-  timeprecision 1fs;
-  
+
+  timeunit 1fs; timeprecision 1fs;
+
   `include "uvm_macros.svh"
 
   import uvm_pkg::*;
@@ -11,5 +10,5 @@ package reset_pkg;
   `include "async_reset_ctrl.svh"
   `include "sync_reset_ctrl.svh"
 
-  
+
 endpackage : reset_pkg

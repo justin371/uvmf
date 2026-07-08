@@ -1,15 +1,15 @@
-{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}example_derived_test.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}example_derived_test.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//                                          
-// DESCRIPTION: This test extends test_top and makes 
+
+// DESCRIPTION: This test extends test_top and makes
 //    changes to test_top using the UVM factory type_override:
-//
-//    Test scenario: 
+
+//    Test scenario:
 //      This is a template test that can be used to create future tests.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -24,7 +24,7 @@ class example_derived_test extends test_top;
   endfunction
 
   virtual function void build_phase(uvm_phase phase);
-    // The factory override below is an example of how to replace the {{name}}_bench_sequence_base 
+    // The factory override below is an example of how to replace the {{name}}_bench_sequence_base
     // sequence with the example_derived_test_sequence.
 
     {{name}}_bench_sequence_base::type_id::set_type_override(example_derived_test_sequence::get_type());
@@ -33,7 +33,7 @@ class example_derived_test extends test_top;
     super.build_phase(phase);
 
     // pragma uvmf custom configuration_settings_post_randomize begin
-    // UVMF_CHANGE_ME Test specific configuration values can be set here.  
+    // UVMF_CHANGE_ME Test specific configuration values can be set here.
     // The configuration structure has already been randomized.
     // pragma uvmf custom configuration_settings_post_randomize end
   endfunction

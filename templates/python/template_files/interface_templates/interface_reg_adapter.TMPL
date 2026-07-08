@@ -1,19 +1,19 @@
-{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}2reg_adapter.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}2reg_adapter.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//     
-// DESCRIPTION: 
+
+// DESCRIPTION:
 // This file contains the UVM register adapter for the {{name}} interface.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 {% block contents %}
 class {{name}}2reg_adapter {{macro.paramDeclare(paramDefs)|indent(6)}} extends uvm_reg_adapter;
 
 {{macro.objUtils([name,'2reg_adapter']|join(""),paramDefs)}}
-  
+
   // pragma uvmf custom class_item_additional begin
   // pragma uvmf custom class_item_additional end
 
@@ -31,7 +31,7 @@ class {{name}}2reg_adapter {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     supports_byte_enable = 0;
 
     // Does the Agent's Driver provide separate response sequence items?
-    // i.e. Does the driver call seq_item_port.put() 
+    // i.e. Does the driver call seq_item_port.put()
     // and do the sequences call get_response()?
     // 0 = NO
     // 1 = YES
@@ -46,7 +46,7 @@ class {{name}}2reg_adapter {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   virtual function uvm_sequence_item reg2bus(const ref uvm_reg_bus_op rw);
 
     {{name}}_transaction {{macro.paramUse(paramDefs)|indent(20)}} trans_h = {{name}}_transaction {{macro.paramUse(paramDefs)|indent(29)}}::type_id::create("trans_h");
-    
+
     // pragma uvmf custom reg2bus begin
     // UVMF_CHANGE_ME : Fill in the reg2bus adapter mapping registe fields to protocol fields.
 
@@ -58,7 +58,7 @@ class {{name}}2reg_adapter {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     // trans_h.data = rw.data;
 
     // pragma uvmf custom reg2bus end
-    
+
     // Return the adapted transaction
     return trans_h;
 
@@ -77,7 +77,7 @@ class {{name}}2reg_adapter {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     // pragma uvmf custom bus2reg begin
     // UVMF_CHANGE_ME : Fill in the bus2reg adapter mapping protocol fields to register fields.
     //Adapt the following for your sequence item type
-    //Copy over instruction type 
+    //Copy over instruction type
     // rw.kind = (trans_h.op == WB_WRITE) ? UVM_WRITE : UVM_READ;
     //Copy over address
     // rw.addr = trans_h.addr;

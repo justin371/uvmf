@@ -23,7 +23,9 @@
 // class XlSvQueue \________________________________________/ johnS 6-15-2010
 //---------------------------------------------------------------------------
 
-class XlSvQueue #(type PayloadType = int); // {
+class XlSvQueue #(
+    type PayloadType = int
+);  // {
 
   //private:
 
@@ -34,81 +36,90 @@ class XlSvQueue #(type PayloadType = int); // {
   //public:
   PayloadType payload;
 
-  function new(); payload = new(); endfunction
+  function new();
+    payload = new();
+  endfunction
 
-  function void setNext( XlSvQueue #(PayloadType) next );
-    dNext = next; endfunction
-  function void setTail( XlSvQueue #(PayloadType) tail );
-    dTail = tail; endfunction
-  function XlSvQueue #(PayloadType) next(); return dNext; endfunction
-  function XlSvQueue #(PayloadType) tail(); return dTail; endfunction
+  function void setNext(XlSvQueue#(PayloadType) next);
+    dNext = next;
+  endfunction
+  function void setTail(XlSvQueue#(PayloadType) tail);
+    dTail = tail;
+  endfunction
+  function XlSvQueue#(PayloadType) next();
+    return dNext;
+  endfunction
+  function XlSvQueue#(PayloadType) tail();
+    return dTail;
+  endfunction
 
-  function void enqueue(
-                        XlSvQueue #(PayloadType) queue,
-                        XlSvQueue #(PayloadType) pred=null );
+  function void enqueue(XlSvQueue#(PayloadType) queue, XlSvQueue#(PayloadType) pred = null);
     // {
     // By default, use queue tail itself as predecessor.
-    if( pred == null ) begin
+    if (pred == null) begin
       pred = queue.tail();
-      if( pred == null )
-        pred = queue;
+      if (pred == null) pred = queue;
     end
 
     // if( I'm not already enqueued ... )
-    if( dQueue == null ) begin
+    if (dQueue == null) begin
       dQueue = queue;
 
-      setNext( pred.next() );
-      pred.setNext( this );
+      setNext(pred.next());
+      pred.setNext(this);
 
-      if( next() == null ) queue.setTail( this );
-    end
+      if (next() == null) queue.setTail(this);
+    end  // I'd better not be part of another queue ...
+    else if (dQueue != queue)
+      $display(
+          {
+            "XL-VIP ERROR: XlSvQueue::enqueue() ",
+            "Attempting to enqueue an entry that is ",
+            "already part of another queue.\n"
+          }
+      );
+  endfunction  // }
 
-    // I'd better not be part of another queue ...
-    else if( dQueue != queue )
-      $display( { "XL-VIP ERROR: XlSvQueue::enqueue() ",
-                  "Attempting to enqueue an entry that is ",
-                  "already part of another queue.\n" } );
-  endfunction // }
-
-  function void dequeue(); // {
+  function void dequeue();  // {
     // I'd better already be enqueued ...
-    if( dQueue == null )
-      $display( { "XL-VIP ERROR: XlSvQueue::dequeue() ",
-                  "Attempting to dequeue an entry that is ",
-                  "not part of this queue.\n" } );
+    if (dQueue == null)
+      $display(
+          {
+            "XL-VIP ERROR: XlSvQueue::dequeue() ",
+            "Attempting to dequeue an entry that is ",
+            "not part of this queue.\n"
+          }
+      );
 
     // Furthermore, I'd better at the head ...
-    if( dQueue.next() != this )
-      $display( { "XL-VIP ERROR: XlSvQueue::dequeue() ",
-                  "Attempting to dequeue an entry that is ",
-                  "not part at the head of this queue.\n" } );
+    if (dQueue.next() != this)
+      $display(
+          {
+            "XL-VIP ERROR: XlSvQueue::dequeue() ",
+            "Attempting to dequeue an entry that is ",
+            "not part at the head of this queue.\n"
+          }
+      );
 
-    dQueue.setNext( next() );
-    if( next() == null ) dQueue.setTail( null );
+    dQueue.setNext(next());
+    if (next() == null) dQueue.setTail(null);
     dQueue = null;
-  endfunction // }
+  endfunction  // }
 
 
   function bit isEmpty();
     return ((dNext == null) & (dTail == null));
   endfunction : isEmpty
 
-  function string sprint(bit show_dQueue=0);
+  function string sprint(bit show_dQueue = 0);
     string msg = $get_id_from_handle(this);
-    if (show_dQueue) 
-      if (dQueue == null)
-        $sformat(msg, "%s dQueue = null", msg);
-      else
-        $sformat(msg, "%s dQueue = %s", msg, $get_id_from_handle(dQueue));
-    if (dNext == null)
-      $sformat(msg, "%s dNext = null", msg);
-    else
-      $sformat(msg, "%s dNext = %s", msg, $get_id_from_handle(dNext));
-    if (dTail == null)
-      $sformat(msg, "%s dTail = null", msg);
-    else
-      $sformat(msg, "%s dTail = %s", msg, $get_id_from_handle(dTail));
+    if (show_dQueue)
+      if (dQueue == null) $sformat(msg, "%s dQueue = null", msg);
+      else $sformat(msg, "%s dQueue = %s", msg, $get_id_from_handle(dQueue));
+    if (dNext == null) $sformat(msg, "%s dNext = null", msg);
+    else $sformat(msg, "%s dNext = %s", msg, $get_id_from_handle(dNext));
+    if (dTail == null) $sformat(msg, "%s dTail = null", msg);
+    else $sformat(msg, "%s dTail = %s", msg, $get_id_from_handle(dTail));
     $sformat(msg, "%s payload = %s", msg, payload.sprint());
     return msg;
   endfunction : sprint
@@ -124,6 +135,5 @@ class XlSvQueue #(type PayloadType = int); // {
     end
     return msg;
   endfunction : deep_sprint
-  
-endclass // }
 
+endclass  // }

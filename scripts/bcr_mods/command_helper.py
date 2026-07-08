@@ -10,16 +10,20 @@ __all__ = ['logger','generate_command','vars_string','clean_whitespace','filelis
 logger = logging.getLogger("logger")
 pprinter = pprint.PrettyPrinter(indent=2)
 
+
+def using_vip(v):
+  return ('using_vip' in v and v['using_vip']) or ('using_qvip' in v and v['using_qvip'])
+
 ## Base command generator class. All generators should extend from this in order to maximize
 ## reuse
 class Generator(object):
-  
+
   ## An inheriting class should always initialize the 'keys' array to reflect the self.<keys> entries
   ## to build up to produce the desired command.
   def __init__(self):
     self.keys = []
-  
-  ## repr(obj) will return multi-line string outlining the value associated with the name and value of 
+
+  ## repr(obj) will return multi-line string outlining the value associated with the name and value of
   ##all keys that could contribute to a given object's command-line
   def __repr__(self):
     fmt = " {:>26}: {}"
@@ -27,7 +31,7 @@ class Generator(object):
     for k in self.keys:
       lines.append(fmt.format(k,getattr(self,k,'unknown')))
     return '\n'.join(lines) + '\n)\n'
-  
+
   ## Return a full command string. By default, this will iterate through all of the items in the
   ## "keys" array, resolve each one's value (i.e. self.<key>) and concatenate these in order
   ## to produce the final returned result.
@@ -57,9 +61,9 @@ class Generator(object):
     return ''
 
   def set_mvc_switch(self,v={}):
-    if 'using_qvip' in v and v['using_qvip']:
+    if using_vip(v):
       if 'QUESTA_MVC_HOME' not in os.environ:
-        logger.error("using_qvip set True but $$QUESTA_MVC_HOME not set")
+        logger.error("using_vip set True but $$QUESTA_MVC_HOME not set")
         sys.exit(1)
       return '-mvchome '+os.environ['QUESTA_MVC_HOME']
     else:
@@ -68,7 +72,7 @@ class Generator(object):
   def set_timescale(self,v={}):
     if 'timescale' in v and v['timescale']:
       return '-timescale '+v['timescale']
-    elif 'using_qvip' in v and v['using_qvip']:
+    elif using_vip(v):
       return '-timescale 1ps/1ps'
     else:
       return ''
@@ -76,7 +80,7 @@ class Generator(object):
   def set_time_resolution(self,v={}):
     if 'time_resolution' in v and v['time_resolution']:
       return "-t "+v['time_resolution']
-    elif 'using_qvip' in v and v['using_qvip']:
+    elif using_vip(v):
       return '-t 1ps'
     else:
       return ''
@@ -418,7 +422,7 @@ def filelists(val,assoc=None,patt=None):
   for n,v in d.items():
     s = ''
     for e in v:
-      # Check for a syntax association (vlog,vhdl,etc) and only include in output if 
+      # Check for a syntax association (vlog,vhdl,etc) and only include in output if
       # no association was requested or the association matches the first entry in the tuple
       if not assoc or e[0]==assoc:
         # Second entry of the tuple is expected to be a string containing a space separated list of file paths
@@ -455,5 +459,3 @@ def library_mappings(self,val):
       sys.exit(1)
     map_tuples.append((s.group('logical'),s.group('physical')))
   return map_tuples
-
-

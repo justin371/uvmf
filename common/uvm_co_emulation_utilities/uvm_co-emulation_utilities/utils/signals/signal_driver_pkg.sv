@@ -7,4 +7,3 @@ package signal_driver_pkg;
   `include "signal_driver_proxy.svh"
 
 endpackage : signal_driver_pkg
-

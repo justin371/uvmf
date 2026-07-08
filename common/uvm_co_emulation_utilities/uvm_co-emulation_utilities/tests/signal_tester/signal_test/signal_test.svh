@@ -13,18 +13,18 @@ class signal_test extends base_test;
     clock_period[2] = 5000;
 
     super.build_phase(phase);
-    
+
   endfunction : build_phase
 
   task run_phase(uvm_phase phase);
     phase.raise_objection(this);
 
     fork
-      signal_monitor_test(0); // signal monitor connected to clock 0
-      cpu_pc_monitor_test(0); // signal monitor connected to clock 0
+      signal_monitor_test(0);  // signal monitor connected to clock 0
+      cpu_pc_monitor_test(0);  // signal monitor connected to clock 0
     join
     clk_ctrl[0].wait_clocks(20);
-      
+
     phase.drop_objection(this);
   endtask : run_phase
 
@@ -40,23 +40,27 @@ class signal_test extends base_test;
 
     reset_ctrl[num].wait_reset_deassertion();
     `uvm_info(report_id, $sformatf("sync reset %0d deasserted", num), UVM_LOW)
-    
+
     clk_ctrl[num].wait_clocks(10);
     // Enable the signal monitor and set the timeout
-    clk0_monitor_proxy.monitor_control(1'b1,100); //enable, timeout count
+    clk0_monitor_proxy.monitor_control(1'b1, 100);  //enable, timeout count
 
     // Set wait for pattern
     pattern_find = 'h123;
     fork
       begin
         // pattern to find, count, pattern_found
-        clk0_monitor_proxy.wait_for_signal_pattern(pattern_find,1,pattern_found,signals_found);
-        if(pattern_found) begin
-          if(pattern_find != signals_found) begin
-            `uvm_error(report_id, $sformatf("signal find pattern mismatch expected %0h found %0h", pattern_find,signals_found));
+        clk0_monitor_proxy.wait_for_signal_pattern(pattern_find, 1, pattern_found, signals_found);
+        if (pattern_found) begin
+          if (pattern_find != signals_found) begin
+            `uvm_error(
+                report_id, $sformatf(
+                "signal find pattern mismatch expected %0h found %0h", pattern_find, signals_found
+                ));
           end
         end else begin
-          `uvm_error(report_id, $sformatf("signal find pattern timeout did not find %0h", pattern_find));
+          `uvm_error(report_id, $sformatf(
+                     "signal find pattern timeout did not find %0h", pattern_find));
         end
       end
       begin
@@ -64,12 +68,12 @@ class signal_test extends base_test;
         timeout = 1;
       end
     join_any
-    if(timeout == 1'b1) begin
+    if (timeout == 1'b1) begin
       `uvm_error(report_id, $sformatf("signal find pattern %0h timeout", num));
     end
 
   endtask
-  
+
   task cpu_pc_monitor_test(int num);
     bit timeout = 0;
     packed_pc_trigger_s triggers[`CPU_PC_NUMBER_OF_TRIGGERS];
@@ -81,10 +85,10 @@ class signal_test extends base_test;
 
     reset_ctrl[num].wait_reset_deassertion();
     `uvm_info(report_id, $sformatf("sync reset %0d deasserted", num), UVM_LOW)
-  
+
     // setup PC trigger
-    for(ii=0;ii<`CPU_PC_NUMBER_OF_TRIGGERS;ii++) begin
-      if(ii<2) begin
+    for (ii = 0; ii < `CPU_PC_NUMBER_OF_TRIGGERS; ii++) begin
+      if (ii < 2) begin
         triggers[ii].valid = 1'b1;
       end else begin
         triggers[ii].valid = 1'b0;
@@ -106,17 +110,21 @@ class signal_test extends base_test;
       end
       begin
         cpu_pc_monitor.wait_for_pc_trigger(trigger_found);
-        if(trigger_found.pc !=  triggers[0].pc_trigger) begin
-          `uvm_error(report_id, $sformatf("PC trigger expected %0d found %0d", triggers[0].pc_trigger,trigger_found.pc));
+        if (trigger_found.pc != triggers[0].pc_trigger) begin
+          `uvm_error(report_id, $sformatf(
+                     "PC trigger expected %0d found %0d", triggers[0].pc_trigger, trigger_found.pc
+                     ));
         end
-        if(trigger_found.r1 != 32'hdeadbeef) begin
+        if (trigger_found.r1 != 32'hdeadbeef) begin
           `uvm_error(report_id, $sformatf("PC R1 expected deadbeef found %0h", trigger_found.r1));
         end
         cpu_pc_monitor.wait_for_pc_trigger(trigger_found);
-        if(trigger_found.pc !=  triggers[1].pc_trigger) begin
-          `uvm_error(report_id, $sformatf("PC trigger expected %0d found %0d", triggers[1].pc_trigger,trigger_found.pc));
+        if (trigger_found.pc != triggers[1].pc_trigger) begin
+          `uvm_error(report_id, $sformatf(
+                     "PC trigger expected %0d found %0d", triggers[1].pc_trigger, trigger_found.pc
+                     ));
         end
-        if(trigger_found.r1 != 32'ha5a5c3c3) begin
+        if (trigger_found.r1 != 32'ha5a5c3c3) begin
           `uvm_error(report_id, $sformatf("PC R1 expected a5a5c3c3 found %0h", trigger_found.r1));
         end
       end

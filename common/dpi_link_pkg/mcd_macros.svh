@@ -1,13 +1,13 @@
 //---------------------------------------------------------------------------
-// Copyright 2014 Mentor Graphics Corporation 
-//    All Rights Reserved 
-// 
-// THIS WORK CONTAINS TRADE SECRET 
-// AND PROPRIETARY INFORMATION WHICH IS THE 
-// PROPERTY OF MENTOR GRAPHICS 
-// CORPORATION OR ITS LICENSORS AND IS 
-// SUBJECT TO LICENSE TERMS. 
-// 
+// Copyright 2014 Mentor Graphics Corporation
+//    All Rights Reserved
+
+// THIS WORK CONTAINS TRADE SECRET
+// AND PROPRIETARY INFORMATION WHICH IS THE
+// PROPERTY OF MENTOR GRAPHICS
+// CORPORATION OR ITS LICENSORS AND IS
+// SUBJECT TO LICENSE TERMS.
+
 //---------------------------------------------------------------------------
 //   WARRANTY:
 //   Use all material in this file at your own risk.  Mentor Graphics, Corp.
@@ -32,7 +32,7 @@
    endfunction : set_``n \
    virtual function t get_``n(); \
       if (!``n``_set) \
-	`uvm_fatal(`"get_``n```", `"Tried to get data member '``n' before setting it`") \
+  `uvm_fatal(`"get_``n```", `"Tried to get data member '``n' before setting it`") \
       return n; \
    endfunction : get_``n
 
@@ -47,9 +47,8 @@
    endfunction : set_``n \
    virtual function t get_``n(); \
       if (!``n``_set) \
-	`uvm_fatal(`"get_``n```", `"Tried to get data member '``n' before setting it`") \
+  `uvm_fatal(`"get_``n```", `"Tried to get data member '``n' before setting it`") \
       return n; \
    endfunction : get_``n
 
 `endif
-

@@ -1,13 +1,13 @@
-{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{src_dir}}register_test_sequence.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{src_dir}}register_test_sequence.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//                                          
+
 // DESCRIPTION: This file contains the top level sequence used in register_test.
 // It uses the UVM built in register test.  Specific UVM built-in tests can be
 // selected in the body task.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -37,7 +37,7 @@ class register_test_sequence extends {{name}}_bench_sequence_base;
     // Reset the DUT
     fork
       // pragma uvmf custom register_test_reset begin
-      // UVMF_CHANGE_ME 
+      // UVMF_CHANGE_ME
       // Select the desired wait_for_reset or provide custom mechanism.
       // fork-join for this code block may be unnecessary based on your situation.
 {% for bfm in bfms %}
@@ -65,7 +65,7 @@ class register_test_sequence extends {{name}}_bench_sequence_base;
                                    UVM_DO_MEM_ACCESS        |
                                    UVM_DO_SHARED_ACCESS     |
                                    UVM_DO_MEM_WALK          |
-                                   UVM_DO_ALL_REG_MEM_TESTS 
+                                   UVM_DO_ALL_REG_MEM_TESTS
     // pragma uvmf custom register_test_operation end
                                   };
 

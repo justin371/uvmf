@@ -3,14 +3,14 @@
 //   Digital Industries Software
 //   Siemens EDA
 //   All Rights Reserved Worldwide
-//
+
 //   Licensed under the Apache License, Version 2.0 (the
 //   "License"); you may not use this file except in
 //   compliance with the License.  You may obtain a copy of
 //   the License at
-//
+
 //       http://www.apache.org/licenses/LICENSE-2.0
-//
+
 //   Unless required by applicable law or agreed to in
 //   writing, software distributed under the License is
 //   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -38,75 +38,73 @@
 // There are no ordering requirements for successful comparison. There are no assumptions
 // made about the relative timing of the two streams of data. Comparisons are initiated
 // by the arrival of transactions through the write interface.
-//
-//
+
+
 // PARAMETERS:
 //    T    - Specifies the type of transactions to be compared.
 //           Must be derived from uvmf_transaction_base.
 
-class uvmf_out_of_order_race_scoreboard #(type T=uvmf_transaction_base, type BASE_T = uvmf_out_of_order_scoreboard #(T)) extends BASE_T;
+class uvmf_out_of_order_race_scoreboard #(
+    type T = uvmf_transaction_base,
+    type BASE_T = uvmf_out_of_order_scoreboard#(T)
+) extends BASE_T;
 
-   `uvm_component_param_utils(uvmf_out_of_order_race_scoreboard #(T,BASE_T))
+  `uvm_component_param_utils(uvmf_out_of_order_race_scoreboard#(T, BASE_T))
 
-   // FUNCTION: new
-   function new(string name, uvm_component parent );
-      super.new(name, parent);
-   endfunction : new
- 
-   // FUNCTION: write_expected
-   // Transactions arrive through this interface from one or more predictors.
-   // Transactions are either compared against a transaction with a matching key 
-   // or stored in the hash if a transaction with a matching key does not exist.
-   virtual function void write_expected (input T t);
-     transaction_count++;
-     ->entry_received;
-     compare_or_store_entry(t);
-   endfunction
+  // FUNCTION: new
+  function new(string name, uvm_component parent);
+    super.new(name, parent);
+  endfunction : new
 
-   // FUNCTION: write_actual
-   // Transactions arrive through this interface from one or more DUT output monitors.
-   // Transactions are either compared against a transaction with a matching key 
-   // or stored in the hash if a transaction with a matching key does not exist.
-   virtual function void write_actual (input T t);
-     ->entry_received;
-     compare_or_store_entry(t);
-   endfunction
+  // FUNCTION: write_expected
+  // Transactions arrive through this interface from one or more predictors.
+  // Transactions are either compared against a transaction with a matching key
+  // or stored in the hash if a transaction with a matching key does not exist.
+  virtual function void write_expected(input T t);
+    transaction_count++;
+    ->entry_received;
+    compare_or_store_entry(t);
+  endfunction
 
-   virtual function void compare_or_store_entry (input T t);
-      T expected_item;
-      if (scoreboard_enabled) 
-         begin : in_compare_or_store_entry
-         // Test if matching item exists in expected hash
-         if ( expected_hash.exists(t.get_key()) ) 
-            begin : item_exists_in_array
-            expected_item=expected_hash[t.get_key()];
-            expected_hash.delete(t.get_key());
-            // Exit function if comparison is disabled
-            if ( disable_entry_compare ) begin : comparison_disabled
-                  `uvm_warning("SCBD", "COMPARISONS DISABLED")
-                  return;
-                end : comparison_disabled
-            // Compare actual transaction to expected transaction
-            last_expected = expected_item;
-            last_actual = t;
-            if ( t.compare(expected_item) ) 
-               begin : compare_passed
-               match_count++;
-               last_mismatched = 0;
-               `uvm_info("SCBD",compare_message("MATCH! - ",expected_item,t),UVM_MEDIUM)
-               end : compare_passed
-            else 
-               begin : compare_failed
-               mismatch_count++;
-               last_mismatched = 1;
-               `uvm_error("SCBD",compare_message("MISMATCH! - ",expected_item,t))
-               end : compare_failed
-            end : item_exists_in_array
-         else 
-            begin : no_item_exists_in_array_add_item_to_array
-               expected_hash[t.get_key()]=t;
-            end : no_item_exists_in_array_add_item_to_array
-         end : in_compare_or_store_entry
-   endfunction : compare_or_store_entry
-  
+  // FUNCTION: write_actual
+  // Transactions arrive through this interface from one or more DUT output monitors.
+  // Transactions are either compared against a transaction with a matching key
+  // or stored in the hash if a transaction with a matching key does not exist.
+  virtual function void write_actual(input T t);
+    ->entry_received;
+    compare_or_store_entry(t);
+  endfunction
+
+  virtual function void compare_or_store_entry(input T t);
+    T expected_item;
+    if (scoreboard_enabled) begin : in_compare_or_store_entry
+      // Test if matching item exists in expected hash
+      if (expected_hash.exists(t.get_key())) begin : item_exists_in_array
+        expected_item = expected_hash[t.get_key()];
+        expected_hash.delete(t.get_key());
+        // Exit function if comparison is disabled
+        if (disable_entry_compare) begin : comparison_disabled
+          `uvm_warning("SCBD", "COMPARISONS DISABLED")
+          return;
+        end : comparison_disabled
+        // Compare actual transaction to expected transaction
+        last_expected = expected_item;
+        last_actual   = t;
+        if (t.compare(expected_item)) begin : compare_passed
+          match_count++;
+          last_mismatched = 0;
+          `uvm_info("SCBD", compare_message("MATCH! - ", expected_item, t), UVM_MEDIUM)
+        end : compare_passed
+        else begin : compare_failed
+          mismatch_count++;
+          last_mismatched = 1;
+          `uvm_error("SCBD", compare_message("MISMATCH! - ", expected_item, t))
+        end : compare_failed
+      end : item_exists_in_array
+      else begin : no_item_exists_in_array_add_item_to_array
+        expected_hash[t.get_key()] = t;
+      end : no_item_exists_in_array_add_item_to_array
+    end : in_compare_or_store_entry
+  endfunction : compare_or_store_entry
+
 endclass : uvmf_out_of_order_race_scoreboard

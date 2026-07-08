@@ -12,16 +12,15 @@ output out_signal;
 reg out_signal_o;
 
 always @(posedge clk) begin
-   if (rst) begin
+  if (rst) begin
      out_signal_o <= 0;
-     end 
-   else begin
+     end
+  else begin
      out_signal_o <= ~in_signal;
      end
-   end
+  end
 
 assign out_signal = out_signal_o;
 
 endmodule
 {% endblock %}
-

@@ -10,8 +10,6 @@ sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python3")
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/scripts/bcr_mods")
 print(sys.version)
-##RDO if sys.version_info[0] < 3:
-##RDO   sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python2")
 
 try:
   import yaml
@@ -113,7 +111,7 @@ def print_variables(args,flow,logger,filter=[]):
   ## Information requested - describe all the variables (flow and step-level variables)
   if 'variable_descriptions' in flow.data['flows'][args.flow]:
     for variable_name, variable_description in flow.data['flows'][args.flow]['variable_descriptions'].items():
-      if variable_description: 
+      if variable_description:
         if (not globstr) or (fnmatch.fnmatch(variable_name,globstr) or fnmatch.fnmatch(variable_description,globstr)):
           l.append(textwrap.fill("{}{:>16}{}: {} (Defaults to \"{}\")".format(bold_on,variable_name,bold_off,variable_description,flow.data['flows'][args.flow]['variables'][variable_name]),width=100,subsequent_indent='                    '))
     logger.info("Variables for flow '{}':\n  {}".format(args.flow,'\n  '.join(map(str,l))))
@@ -122,7 +120,7 @@ def print_variables(args,flow,logger,filter=[]):
     if 'variable_descriptions' not in step_value:
       continue
     for variable_name,variable_description in sorted(step_value['variable_descriptions'].items()):
-      if variable_description: 
+      if variable_description:
         l.append(textwrap.fill("{}{}{}: {} (Defaults to \"{}\")".format(bold_on,variable_name,bold_off,variable_description,step_value['variables'][variable_name]),width=85,subsequent_indent='    '))
     logger.info("Variables for step '{}' of flow '{}':\n  {}".format(step_name,args.flow,'\n  '.join(map(str,l))))
 
@@ -151,7 +149,7 @@ def run():
   parser.add_argument("--sim_dir","--sim-dir",help="Specify location of \"sim\" directory",default=None)
   parser.add_argument("--verbose_filelist","--verbose-filelist",help="Print more detail in generated file lists",action='store_true',default=False)
   args,option_overrides = parser.parse_known_args()
-  # Check the option overrides array for any unknown arguments. Anything starting with a dash (-) is an unknown switch, not 
+  # Check the option overrides array for any unknown arguments. Anything starting with a dash (-) is an unknown switch, not
   # an override
   for o in option_overrides:
     if re.match(r'^-',o):
@@ -228,7 +226,7 @@ def run():
     sys.exit(1)
   ## Determine desired steps
   if args.clean:
-    ## If --clean was specified then we're asking to run the 'clean' step. 
+    ## If --clean was specified then we're asking to run the 'clean' step.
     args.steps = ['clean']
     ## Check to make sure 'clean' is a valid step. If not, bomb out
     if 'clean' not in flow.data['flows'][args.flow]['steps']:
@@ -271,7 +269,7 @@ def run():
       print_steps()
       sys.exit(1)
   ## Determine if we're using file associations or not
-  if 'use_fileassoc' in flow.data['flows'][args.flow]: 
+  if 'use_fileassoc' in flow.data['flows'][args.flow]:
     use_fileassoc = flow.data['flows'][args.flow]['use_fileassoc']
     if use_fileassoc:
       fileassoc = flow.data['flows'][args.flow]['fileassoc']
@@ -346,7 +344,7 @@ def run():
             firstiter = False
             filelist_names = []
           filelist_names = filelist_names + results
-          for r in results: 
+          for r in results:
             if r[1] not in all_filelists:
               all_filelists.append(r[1])
         else:
@@ -366,7 +364,7 @@ def run():
       if isinstance(filelist_names,dict):
         liborder = []
         for l in flow.data['options']['libassoc']:
-          #k = l.keys()[0] python2
+          #k = l.keys()[0]
           k = list(l.keys())[0] # python3
           if k in filelist_names:
             liborder.append(k)
@@ -385,7 +383,7 @@ def run():
   else:
     options_tuple = None
   commands = flow.build_commands(args.flow,args.steps,options_tuple)
-  ## Process each command in order. The commands come back as an assoc array with elements 'c', 'f', and 's'.  
+  ## Process each command in order. The commands come back as an assoc array with elements 'c', 'f', and 's'.
   ##    f:  Flow name
   ##    s:  Step name
   ##    c:  The acutal command string or list of strings for this flow and step set
@@ -415,4 +413,3 @@ def run():
 
 if __name__ == '__main__':
   run()
-

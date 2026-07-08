@@ -1,18 +1,18 @@
-//
+
 // File: axi4_master_0_config_policy.sv
-//
+
 // Generated from Mentor VIP Configurator (20200402)
 // Generated using Mentor VIP Library ( 2020.2 : 04/19/2020:18:58 )
-//
+
 class axi4_master_0_config_policy;
     static function void configure
     (
         input axi4_master_0_cfg_t cfg,
         input address_map addrm
     );
-        //
+
         // Agent setup configurations:
-        //
+
         cfg.agent_cfg.is_active = 1;
         cfg.agent_cfg.agent_type = mgc_axi4_v1_0_pkg::AXI4_MASTER;
         // Interface type
@@ -86,9 +86,9 @@ class axi4_master_0_config_policy;
         cfg.agent_cfg.en_perf_stats.enable = 1'b0;
         cfg.agent_cfg.en_perf_stats.step = 0;
         cfg.agent_cfg.en_perf_stats.multiple = 0;
-        //
+
         // VIP Config setup configurations:
-        //
+
         if ( addrm != null )
         begin
             cfg.addr_map = addrm;
@@ -100,31 +100,31 @@ class axi4_master_0_config_policy;
             cfg.master_delay.set_address_map( addrm );
         end
         cfg.master_delay.set_ready_delay_mode( .random_delay(1'b0), .valid2ready(1'b0));
-        
-        
-        
-        
-        
+
+
+
+
+
         cfg.cov_enable.raddr_user = 1'b0;
         cfg.cov_enable.wdata_user = 1'b0;
         cfg.cov_enable.wresp_user = 1'b0;
         cfg.cov_enable.waddr_user = 1'b0;
         cfg.cov_enable.rdata_user = 1'b0;
-        //
+
         // VIP Config setup configurations at default value:
         //    cfg.slave_id = -1;
         //    cfg.m_warn_on_uninitialized_read = 1'b0;
         //    cfg.m_fixed_burst_mem_norm = 1'b0;
         //    cfg.config_id_cov_bin_count = 16;
-        //
-        
-        //
+
+
+
         // BFM setup configurations:
-        //
-        //
+
+
         // Read interleaving depth
         cfg.m_bfm.config_rd_interleave_depth = 1073741824;
-        //
+
         // BFM setup configurations at default value:
         //    cfg.m_bfm.config_write_ctrl_first_ratio = 1;
         //    cfg.m_bfm.config_write_data_first_ratio = 0;
@@ -146,9 +146,8 @@ class axi4_master_0_config_policy;
         //    cfg.m_bfm.config_num_max_outstanding_reads = -1;
         //    cfg.m_bfm.config_num_max_outstanding_writes = -1;
         //    cfg.m_bfm.check_addr_map = AXI4_CHK_LEGAL;
-        //
-        
-    endfunction: configure
-    
-endclass: axi4_master_0_config_policy
 
+
+    endfunction: configure
+
+endclass: axi4_master_0_config_policy

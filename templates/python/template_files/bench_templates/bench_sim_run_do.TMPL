@@ -5,12 +5,12 @@
 
 {% block contents %}
 {% for vmap in vmaps %}
-vmap {{vmap.name}} {{vmap.dirName}} 
+vmap {{vmap.name}} {{vmap.dirName}}
 {% endfor %}
 quietly set svLibs ""
 {% if svLibNames|length > 0 %}
 {% for svLibName in svLibNames %}
-quietly set svLibs [format "%s -sv_lib %s" $svLibs {{svLibName}}] 
+quietly set svLibs [format "%s -sv_lib %s" $svLibs {{svLibName}}]
 {% endfor %}
 {% endif %}
 quietly set extra_vsim_args ""
@@ -32,4 +32,3 @@ quietly set cmd [format "vsim -i -sv_seed random +UVM_TESTNAME=test_top +UVM_VER
 # pragma uvmf custom dut_run_dofile_target end
 eval $cmd
 {% endblock %}
-

@@ -1,30 +1,30 @@
-{% set fname = "{{vip_location}}/{{environment_location}}/{{env_name}}_env_pkg/{{src_dir}}{{name}}.svh" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{env_name}}_env_pkg/{{src_dir}}{{name}}.sv" %}
 {% set conditional = "coverage" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//
-// DESCRIPTION: 
+
+// DESCRIPTION:
 //         This component is used to collect functional coverage at the environment level.
 //   Coverage collection components typically do not have analysis ports for broadcasting
 //   transactions.  They typically only receive transactions and sample functional coverage
 //   on the transaction variables.
-// 
-//   This analysis component has the following analysis_exports that receive the 
+
+//   This analysis component has the following analysis_exports that receive the
 //   listed transaction type.
-//   
+
 {% for export in exports %}
-//   {{export.name}} receives transactions of type  {{export.tType}}  
+//   {{export.name}} receives transactions of type  {{export.tType}}
 {% endfor %}
-//
-//   This analysis component has the following analysis_ports that can broadcast 
+
+//   This analysis component has the following analysis_ports that can broadcast
 //   the listed transaction type.
-//
+
 {% for port in ports %}
-//  {{port.name}} broadcasts transactions of type {{port.tType}} 
+//  {{port.name}} broadcasts transactions of type {{port.tType}}
 {% endfor %}
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 {% block contents %}
@@ -38,7 +38,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
   // Instantiate a handle to the configuration of the environment in which this component resides
   CONFIG_T configuration;
 
-{% if exports|length >0 %}  
+{% if exports|length >0 %}
   // Instantiate the analysis exports
 {% endif %}
 {% for export in exports %}
@@ -52,10 +52,10 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
   uvm_analysis_port #({{port.tType}}) {{port.name}};
 {% endfor %}
 
-{% if qvip_exports|length > 0 %} 
-  // Instantiate QVIP analysis exports
+{% if vip_exports|length > 0 %}
+  // Instantiate VIP analysis exports
 {% endif %}
-{% for export in qvip_exports %}
+{% for export in vip_exports %}
   uvm_analysis_imp_{{export.name}} #(mvc_sequence_item_base, {{name}} {{macro.paramUse(parameters)|indent(30)}}) {{export.name}};
 {% endfor %}
 
@@ -102,7 +102,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
 {% for port in ports %}
     {{port.name}} =new("{{port.name}}", this );
 {% endfor %}
-{% for export in qvip_exports %}
+{% for export in vip_exports %}
     {{export.name}} = new("{{export.name}}", this);
 {% endfor %}
   // pragma uvmf custom build_phase begin
@@ -123,7 +123,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
     // Code to construct output transaction of type {{port.name}}_output_transaction_t
     {{port.name}}_output_transaction = {{port.name}}_output_transaction_t::type_id::create("{{port.name}}_output_transaction");
 {% endfor %}
-    //  UVMF_CHANGE_ME: Add functional coverage to this component to implement coverage model.  
+    //  UVMF_CHANGE_ME: Add functional coverage to this component to implement coverage model.
     `uvm_info("UNIMPLEMENTED_COVERAGE_MODEL", "******************************************************************************************************",UVM_NONE)
     `uvm_info("UNIMPLEMENTED_COVERAGE_MODEL", "UVMF_CHANGE_ME: This component needs to be completed with coverage model",UVM_NONE)
     `uvm_info("UNIMPLEMENTED_COVERAGE_MODEL", "******************************************************************************************************",UVM_NONE)
@@ -135,10 +135,10 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
   endfunction
 {% endfor %}
 
-{% for export in qvip_exports %}
+{% for export in vip_exports %}
   // FUNCTION: write_{{export.name}}
-  // QVIP transactions received through {{export.name}} initiate the execution of this function.
-  // This function casts incoming QVIP transactions into the correct protocol type and then performs prediction 
+  // VIP transactions received through {{export.name}} initiate the execution of this function.
+  // This function casts incoming VIP transactions into the correct protocol type and then performs prediction
   // of DUT output values based on DUT input, configuration and state
   virtual function void write_{{export.name}}(mvc_sequence_item_base _t);
     // pragma uvmf custom {{export.name}}_coverage begin
@@ -154,7 +154,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
 {% for port in ports %}
     {{port.name}}_output_transaction = {{port.name}}_output_transaction_t::type_id::create("{{port.name}}_output_transaction");
 {% endfor %}
-    //  UVMF_CHANGE_ME: Add functional coverage to this component to implement coverage model.  
+    //  UVMF_CHANGE_ME: Add functional coverage to this component to implement coverage model.
     `uvm_info("UNIMPLEMENTED_COVERAGE_MODEL", "******************************************************************************************************",UVM_NONE)
     `uvm_info("UNIMPLEMENTED_COVERAGE_MODEL", "UVMF_CHANGE_ME: This component needs to be completed with coverage model",UVM_NONE)
     `uvm_info("UNIMPLEMENTED_COVERAGE_MODEL", "******************************************************************************************************",UVM_NONE)
@@ -163,9 +163,9 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
     {{port.name}}.write({{port.name}}_output_transaction);
 {% endfor %}
     // pragma uvmf custom {{export.name}}_coverage end
-  endfunction  
+  endfunction
 {% endfor %}
-endclass 
+endclass
 
 // pragma uvmf custom external begin
 // pragma uvmf custom external end

@@ -1,0 +1,30 @@
+{% set fname = "{{bench_location}}/{{name}}/tb/testbench/BUILD" %}
+load("@rules_verilog//verilog:defs.bzl", "verilog_dv_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["*.svh"]))
+
+verilog_dv_library(
+    name = "hdl",
+    srcs = glob(["*.sv*"]),
+    in_flist = [
+        # pragma uvmf custom in_flist_prepend begin
+        # pragma uvmf custom in_flist_prepend end
+        "hdl_top.sv",
+        "hvl_top.sv",
+        # pragma uvmf custom in_flist_append begin
+        # pragma uvmf custom in_flist_append end
+    ],
+    deps = [
+        "@uvmf//uvmf_base_pkg:pkg",
+        "//hw/dv/project_benches/{{name}}/tb/parameters:pkg",
+        "//hw/dv/project_benches/{{name}}/tb/tests:tests",
+        "//hw/dv/verification_ip/environment_packages/{{env_name}}_env_pkg:pkg",
+{% for pkg in bfm_pkgs %}
+        "//hw/dv/verification_ip/interface_packages/{{pkg}}_pkg:pkg",
+{% endfor %}
+        # pragma uvmf custom deps_additional begin
+        # pragma uvmf custom deps_additional end
+    ],
+)

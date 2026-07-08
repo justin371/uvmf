@@ -1,18 +1,18 @@
-//
+
 // File: axi4_slave_config_policy.sv
-//
+
 // Generated from Mentor VIP Configurator (20200402)
 // Generated using Mentor VIP Library ( 2020.2 : 04/19/2020:18:58 )
-//
+
 class axi4_slave_config_policy;
     static function void configure
     (
         input axi4_slave_cfg_t cfg,
         input address_map addrm
     );
-        //
+
         // Agent setup configurations:
-        //
+
         cfg.agent_cfg.is_active = 1;
         cfg.agent_cfg.agent_type = mgc_axi4_v1_0_pkg::AXI4_SLAVE;
         // Interface type
@@ -88,10 +88,10 @@ class axi4_slave_config_policy;
         cfg.agent_cfg.en_perf_stats.enable = 1'b0;
         cfg.agent_cfg.en_perf_stats.step = 0;
         cfg.agent_cfg.en_perf_stats.multiple = 0;
-        //
+
         // VIP Config setup configurations:
-        //
-        //
+
+
         // Slave ID
         cfg.slave_id = 0;
         if ( addrm != null )
@@ -104,17 +104,17 @@ class axi4_slave_config_policy;
             cfg.slave_delay.set_address_map( addrm );
         end
         cfg.slave_delay.set_ready_delay_mode( .random_delay(1'b0), .valid2ready(1'b0));
-        
-        
-        
-        
-        
+
+
+
+
+
         cfg.cov_enable.raddr_user = 1'b0;
         cfg.cov_enable.wdata_user = 1'b0;
         cfg.cov_enable.wresp_user = 1'b0;
         cfg.cov_enable.waddr_user = 1'b0;
         cfg.cov_enable.rdata_user = 1'b0;
-        //
+
         // VIP Config setup configurations at default value:
         //    cfg.m_dec_err_rate = 0;
         //    cfg.m_slv_err_rate = 0;
@@ -136,17 +136,17 @@ class axi4_slave_config_policy;
         //    cfg.m_fixed_burst_mem_norm = 1'b0;
         //    cfg.buser_def_val = 0;
         //    cfg.config_id_cov_bin_count = 16;
-        //
-        
-        //
+
+
+
         // BFM setup configurations:
-        //
-        //
+
+
         // Read data reordering depth
         cfg.m_bfm.config_read_data_reordering_depth = 16;
         // Read interleaving depth
         cfg.m_bfm.config_rd_interleave_depth = 1073741824;
-        //
+
         // BFM setup configurations at default value:
         //    cfg.m_bfm.config_enable_rlast = 1'b1;
         //    cfg.m_bfm.config_enable_all_assertions = 1'b1;
@@ -163,9 +163,8 @@ class axi4_slave_config_policy;
         //    cfg.m_bfm.config_enable_qos = 1'b1;
         //    cfg.m_bfm.config_enable_region_support = 1'b0;
         //    cfg.m_bfm.config_protect_ready = 1'b1;
-        //
-        
-    endfunction: configure
-    
-endclass: axi4_slave_config_policy
 
+
+    endfunction: configure
+
+endclass: axi4_slave_config_policy

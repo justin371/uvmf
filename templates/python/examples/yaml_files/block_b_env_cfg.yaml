@@ -61,7 +61,7 @@ uvmf:
       ## because of how the BFMs are passed in at the bench utilize this same order when
       ## this environment's initialize() routine is called.
       agents :
-        - name: "control_plane_in" 
+        - name: "control_plane_in"
           type: "mem"
           parameters:
             - name: "ADDR_WIDTH"
@@ -102,7 +102,7 @@ uvmf:
       ## Each scoreboard is keyed by the scoreboard instantiation name with
       ## information on the scoreboard type and what type of transaction it
       ## will be parsing
-      scoreboards : 
+      scoreboards :
         - name: "control_plane_sb"
           sb_type: "uvmf_in_order_race_scoreboard"
           trans_type: "mem_transaction #(.ADDR_WIDTH(CP_OUT_ADDR_WIDTH))"
@@ -133,27 +133,27 @@ uvmf:
         # Connection 6
         - driver:   "unsecure_data_plane_out.monitored_ap"
           receiver: "unsecure_data_plane_sb.actual_analysis_export"
-      ## Environment-level configuration variables. Each entry is keyed with a 
+      ## Environment-level configuration variables. Each entry is keyed with a
       ## unique name and is assigned a 'type' and 'isrand' value.
       config_vars :
         - name: "block_b_cfgVar1"
-          type : "bit"      
+          type : "bit"
           isrand : "False"
         - name: "block_b_cfgVar3"
           type : "bit [3:0]"
-          isrand : "True" 
+          isrand : "True"
         - name: "block_b_cfgVar4"
-          type : "int"      
-          isrand : "True" 
+          type : "int"
+          isrand : "True"
         - name: "block_b_cfgVar5"
-          type : "int"      
-          isrand : "True" 
+          type : "int"
+          isrand : "True"
       ## Environment-level configuration constraints. Each entry is keyed with
       ## a unique name  with the value being an SVA constraint block
       config_constraints:
-        - name: "element_range_c"  
+        - name: "element_range_c"
           value: "{ block_b_cfgVar4>block_b_cfgVar5; }"
-        - name: "non_negative_c"   
+        - name: "non_negative_c"
           value: "{ (block_b_cfgVar1==0) -> block_b_cfgVar4==0;}"
       ## Specify the need for a UVM register model. The "use_adapter" and "use_explicit_prediction"
       ## entries MUST be "True", and only one map entry is supported that must be associated with an
@@ -168,4 +168,4 @@ uvmf:
         maps:
           - name: "bus_map"
             interface: "control_plane_in"
-            qvip_agent: "False"
+            vip_agent: "False"

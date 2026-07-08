@@ -10,10 +10,10 @@ uvmf:
 #      analysis_exports :
 #        - name: "analysis_export_name"
 #          type: "transaction_type_including_any_parameters"
-#      qvip_analysis_exports :
+#      vip_analysis_exports :
 #        - name: "analysis_export_name"
 #          type: "transaction_type_including_any_parameters"
-#      analysis_ports : 
+#      analysis_ports :
 #        - name: "analysis_port_name"
 #          type: "transaction_type_including_any_parameters"
 #      parameters:
@@ -35,32 +35,38 @@ uvmf:
 #          value: "parameter_value"
 #      imports:
 #        - name: "name_of_package_to_be_imported"
-#       typedefs: 
+#       typedefs:
 #         - name: "name_of_typedef"
 #           type: "definition_of_typedef"
 #      subenvs :
 #        - name: "sub_environment_insance_name"
 #          type: "sub_environment_package"
-#      qvip_subenvs:
-#        - name: "qvip_sub_environment_instance_name"
-#          type: "qvip_sub_environment_package"
+#        - name: "repeated_sub_environment"
+#          type: "sub_environment_package"
+#          count: 2
+#          use_register_model: true
+#          reg_block_instance_name: "sub_rm_{index}"
+#          base_address: "SUB_BASE + {index} * SUB_STRIDE"
+#      vip_subenvs:
+#        - name: "vip_sub_environment_instance_name"
+#          type: "vip_sub_environment_package"
       agents :
-        - name: "agent_instance_name" 
+        - name: "agent_instance_name"
           type: "interface_name"
 #          initiator_responder: "INITIATOR_or_RESPONDER"
 #          parameters:
 #            - name: "IF_PARAMETER"
 #              value: "ENV_PARAMETER"
 #      non_uvmf_components :
-#        - name: "component_instance_name" 
+#        - name: "component_instance_name"
 #          type: "component_type"
 #          parameters:
 #            - name: "COMP_PARAMETER"
 #              value: "COMP_PARAMETER"
-#      qvip_memory_agents :
-#        - name: "component_instance_name" 
-#          type: "qvip_memory_agent"
-#          qvip_environment: "environment_instance_name"
+#      vip_memory_agents :
+#        - name: "component_instance_name"
+#          type: "vip_memory_agent"
+#          vip_environment: "environment_instance_name"
 #          parameters:
 #            - name: "COMP_PARAMETER"
 #              value: "COMP_PARAMETER"
@@ -72,7 +78,7 @@ uvmf:
 #      ## Each scoreboard is keyed by the scoreboard instantiation name with
 #      ## information on the scoreboard type and what type of transaction it
 #      ## will be parsing
-#      scoreboards : 
+#      scoreboards :
 #        - name: "scoreboard_instance_name"
 #          sb_type: "uvmf_in_order_race_scoreboard"
 #          trans_type: "transaction_type_including_any_parameters"
@@ -97,30 +103,30 @@ uvmf:
 #        - driver:   "component_instance_name.anlaysis_port_name"
 #          receiver: "component_instance_name.analysis_export_name"
 #          validate: "True_or_False"
-#      qvip_connections:
+#      vip_connections:
 #        - ap_key:   "associative_array_key"
 #          driver:   "envName_agentName"
 #          receiver: "component_instance_name.analysis_export_name"
 #          validate: "True_or_False"
-#      ## Environment-level configuration variables. Each entry is keyed with a 
+#      ## Environment-level configuration variables. Each entry is keyed with a
 #      ## unique name and is assigned a 'type' and 'isrand' value.
 #      config_vars :
 #        - name: "has_predictor"
-#          type : "bit"      
+#          type : "bit"
 #          isrand : "False"
 #          value : "1"
 #        - name: "has_coverage"
 #          type : "bit"
-#          isrand : "False" 
+#          isrand : "False"
 #          value : "1"
 #        - name: "has_sub_env"
-#          type : "bit"      
-#          isrand : "False" 
+#          type : "bit"
+#          isrand : "False"
 #          value : "1"
 #      ## Environment-level configuration constraints. Each entry is keyed with
 #      ## a unique name  with the value being an SVA constraint block
 #      config_constraints:
-#        - name: "constraint_body_name"  
+#        - name: "constraint_body_name"
 #          value: "{ constraint; }"
 #      register_model:
 #        use_adapter: "True"
@@ -143,7 +149,7 @@ uvmf:
 #            c_return_type: "void"
 #            sv_return_type: "void"
 #            c_args: "(unsigned int variable1, unsigned int variable2)"
-#            sv_args: 
+#            sv_args:
 #              - name: "variable1"
 #                type: "int unsigned"
 #                dir: "input"

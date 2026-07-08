@@ -1,22 +1,24 @@
 module mgc_ace_monitor_hdl #(
-   int ADDR_WIDTH  = 64,
-   int RDATA_WIDTH = 1024,
-   int WDATA_WIDTH = 1024,
-   int ID_WIDTH    = 30,
-   int USER_WIDTH  = 4,
-   int REGION_MAP_SIZE = 16,
-   int SNOOP_DATA_WIDTH = 1024,
-   int CACHE_LINE_SIZE = 7,
-   string VIP_IF_UVM_NAME,
-   string VIP_IF_UVM_CONTEXT,
-   int BURST_BUFFER = 16,
-   type PARAMS = int
-) (mgc_ace_signal_if pin_if); //pragma attribute mgc_ace_monitor_hdl partition_module_xrtl
+    int ADDR_WIDTH  = 64,
+    int RDATA_WIDTH = 1024,
+    int WDATA_WIDTH = 1024,
+    int ID_WIDTH    = 30,
+    int USER_WIDTH  = 4,
+    int REGION_MAP_SIZE = 16,
+    int SNOOP_DATA_WIDTH = 1024,
+    int CACHE_LINE_SIZE = 7,
+    string VIP_IF_UVM_NAME,
+    string VIP_IF_UVM_CONTEXT,
+    int BURST_BUFFER = 16,
+    type PARAMS = int
+) (
+    mgc_ace_signal_if pin_if
+);  //pragma attribute mgc_ace_monitor_hdl partition_module_xrtl
 
 `ifdef XRTL
 
-   // Instantiate VTL XRTL BFM
-   mgc_xrtl_ace__monitor #(
+  // Instantiate VTL XRTL BFM
+  mgc_xrtl_ace__monitor #(
       .AXI4_ADDRESS_WIDTH(ADDR_WIDTH),
       .AXI4_RDATA_WIDTH(RDATA_WIDTH),
       .AXI4_WDATA_WIDTH(WDATA_WIDTH),
@@ -26,7 +28,7 @@ module mgc_ace_monitor_hdl #(
       .ACE_SNOOP_DATA_WIDTH(SNOOP_DATA_WIDTH),
       .ACE_CACHE_LINE_SIZE(CACHE_LINE_SIZE),
       .BURST_BUFFER(BURST_BUFFER)
-   ) vip_module (
+  ) vip_module (
       .ACVALID(pin_if.ACVALID),
       .ACREADY(pin_if.ACREADY),
       .ACADDR(pin_if.ACADDR),
@@ -93,16 +95,16 @@ module mgc_ace_monitor_hdl #(
       .BID(pin_if.BID),
       .BUSER(pin_if.BUSER),
       .BREADY(pin_if.BREADY)
-   );
+  );
 
 `else
 
-   // Instantiate QVIP connectivity module
-   ace_monitor #(
+  // Instantiate QVIP connectivity module
+  ace_monitor #(
       .PARAMS(PARAMS),
       .IF_NAME(VIP_IF_UVM_NAME),
       .PATH_NAME(VIP_IF_UVM_CONTEXT)
-   ) vip_module (
+  ) vip_module (
       .ACLK(pin_if.ACLK),
       .ARESETn(pin_if.ARESETn),
       .AWID(pin_if.AWID),
@@ -170,8 +172,8 @@ module mgc_ace_monitor_hdl #(
       .CDREADY(pin_if.CDREADY),
       .CDDATA(pin_if.CDDATA),
       .CDLAST(pin_if.CDLAST)
-   );    
+  );
 
 `endif
 
-endmodule: mgc_ace_monitor_hdl
+endmodule : mgc_ace_monitor_hdl

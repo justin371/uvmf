@@ -1,15 +1,15 @@
-{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}register_test.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}register_test.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//                                          
-// DESCRIPTION: This test extends test_top and makes 
+
+// DESCRIPTION: This test extends test_top and makes
 //    changes to test_top using the UVM factory type_override:
-//
-//    Test scenario: 
+
+//    Test scenario:
 //      This is a template test that can be used to create future tests.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -24,7 +24,7 @@ class register_test extends test_top;
   endfunction
 
   virtual function void build_phase(uvm_phase phase);
-    // The factory override below replaces the {{name}}_bench_sequence_base 
+    // The factory override below replaces the {{name}}_bench_sequence_base
     // sequence with the register_test_sequence.
 
     {{name}}_bench_sequence_base::type_id::set_type_override(register_test_sequence::get_type());
@@ -39,7 +39,7 @@ class register_test extends test_top;
     super.end_of_elaboration_phase(phase);
     // pragma uvmf custom register_test_scoreboard_control begin
 
-    // These UVMF scoreboards may need to be disabled for the register test.  
+    // These UVMF scoreboards may need to be disabled for the register test.
     {% for scoreboard in scoreboards %}
 
     // {{scoreboard}}.disable_scoreboard();

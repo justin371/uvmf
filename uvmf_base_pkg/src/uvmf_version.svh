@@ -3,14 +3,14 @@
 //   Digital Industries Software
 //   Siemens EDA
 //   All Rights Reserved Worldwide
-//
+
 //   Licensed under the Apache License, Version 2.0 (the
 //   "License"); you may not use this file except in
 //   compliance with the License.  You may obtain a copy of
 //   the License at
-//
+
 //       http://www.apache.org/licenses/LICENSE-2.0
-//
+
 //   Unless required by applicable law or agreed to in
 //   writing, software distributed under the License is
 //   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -30,7 +30,7 @@
 // CLASS: uvmf_version
 // This class contains classes used to maintain and display the UVM Framework
 // revision number and notes.
-//
+
 // Define the major and minor UVMF release number
 `define UVMF_MAJOR_VERSION 2023
 `define UVMF_MINOR_VERSION 4
@@ -41,13 +41,14 @@ class uvmf_version;
 
   // FUNCTION: print_version
   // Prints the header with UVM Framework version.
-  //
+
   // RETURNS:
   //     bit - Used to print this header. Once run, it's set and isn't run again.
   static function bit print_version();
     $display("----------------------------------------------------------------");
     $display("//  UVM Framework ");
-    $display("//  Version %0d.%0d%s" , `UVMF_MAJOR_VERSION , `UVMF_MINOR_VERSION, `UVMF_PATCH_VERSION);
+    $display("//  Version %0d.%0d%s", `UVMF_MAJOR_VERSION, `UVMF_MINOR_VERSION,
+             `UVMF_PATCH_VERSION);
     $display("//  (C) 2013-2024 Siemens Corporation");
     $display("//  Digital Industries Software");
     $display("//  Siemens EDA");
@@ -57,4 +58,3 @@ class uvmf_version;
     return 1;
   endfunction
 endclass
-

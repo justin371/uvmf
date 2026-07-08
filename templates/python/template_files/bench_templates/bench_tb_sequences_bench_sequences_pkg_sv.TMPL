@@ -3,17 +3,17 @@
 
 {% block description %}
 //----------------------------------------------------------------------
-//
-// DESCRIPTION: This package includes all high level sequence classes used 
+
+// DESCRIPTION: This package includes all high level sequence classes used
 //     in the environment.  These include utility sequences and top
 //     level sequences.
-//
+
 // CONTAINS:
 //     -<{{name}}_sequence_base>
 //     -<example_derived_test_sequence>
-//
+
 //----------------------------------------------------------------------
-//
+
 {% endblock %}
 
 {% block contents %}
@@ -53,11 +53,11 @@ package {{name}}_sequences_pkg;
   // pragma uvmf custom package_imports_additional end
 
 {% if inFactEnabled %}
-  `include "{{src_dir}}infact_{{name}}_bench_transactions.svh"
+  `include "{{src_dir}}infact_{{name}}_bench_transactions.sv"
 {% endif %}
-  `include "{{src_dir}}{{name}}_bench_sequence_base.svh"
-  `include "{{src_dir}}register_test_sequence.svh"
-  `include "{{src_dir}}example_derived_test_sequence.svh"
+  `include "{{src_dir}}{{name}}_bench_sequence_base.sv"
+  `include "{{src_dir}}register_test_sequence.sv"
+  `include "{{src_dir}}example_derived_test_sequence.sv"
 
   // pragma uvmf custom package_item_additional begin
   // UVMF_CHANGE_ME : When adding new sequences to the src directory

@@ -1,18 +1,18 @@
-//
+
 // File: pcie_ep_config_policy.sv
-//
+
 // Generated from Mentor VIP Configurator (20200402)
 // Generated using Mentor VIP Library ( 2020.2 : 04/19/2020:18:58 )
-//
+
 class pcie_ep_config_policy;
     static function void configure
     (
         input pcie_ep_cfg_t cfg
     );
-        //
+
         // Agent setup configurations:
-        //
-        //
+
+
         // Specification Version
         cfg.agent_descriptor.pcie_details.version = mgc_pcie_v2_0_pkg::PCIE_4_0;
         // Max speed
@@ -113,7 +113,7 @@ class pcie_ep_config_policy;
         cfg.agent_descriptor.disable_print = 1'b0;
         // Debug options(See pcie_dsbl_log_e for index meaning)
         cfg.agent_descriptor.dsbl_log_feat = 25'h0000000;
-        //
+
         // BFM setup configurations at default value:
         //    cfg.set_cfg(PCIE_DS_PORT,PCIE_EN_ALL_ASSR,1'b1);
         //    cfg.set_cfg(PCIE_US_PORT,PCIE_EN_ALL_ASSR,1'b1);
@@ -441,9 +441,8 @@ class pcie_ep_config_policy;
         //    cfg.m_bfm.g_stop_reco_lpbk_10b = 1'b0;
         //    cfg.m_bfm.pcie_ts_mode = '{2{PCIE_STD_TS}};
         //    cfg.m_bfm.eq_bypass_mode = '{2{PCIE_FULL_EQ}};
-        //
-        
-    endfunction: configure
-    
-endclass: pcie_ep_config_policy
 
+
+    endfunction: configure
+
+endclass: pcie_ep_config_policy

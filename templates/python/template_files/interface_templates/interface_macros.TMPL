@@ -3,12 +3,12 @@
 
 {% block description %}
 //----------------------------------------------------------------------
-//     
+
 // DESCRIPTION: This file contains macros used with the {{name}} package.
 //   These macros include packed struct definitions.  These structs are
-//   used to pass data between classes, hvl, and BFM's, hdl.  Use of 
+//   used to pass data between classes, hvl, and BFM's, hdl.  Use of
 //   structs are more efficient and simpler to modify.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -16,9 +16,9 @@
 
 // ****************************************************************************
 // When changing the contents of this struct, be sure to update the to_struct
-//      and from_struct methods defined in the macros below that are used in  
+//      and from_struct methods defined in the macros below that are used in
 //      the {{name}}_configuration class.
-//
+
 {% if veloceReady %}
   `define {{name}}_CONFIGURATION_STRUCT \
 typedef struct packed  { \
@@ -56,7 +56,7 @@ typedef struct packed  { \
 // ****************************************************************************
 // When changing the contents of this struct, be sure to update the to_monitor_struct
 //      and from_monitor_struct methods of the {{name}}_transaction class.
-//
+
   `define {{name}}_MONITOR_STRUCT typedef struct packed  { \
 {% for txn in transVars %}
   {{txn.type}} {{txn.name}} {{txn.unpackedDim}}; \
@@ -87,7 +87,7 @@ typedef struct packed  { \
 // When changing the contents of this struct, be sure to update the to_initiator_struct
 //      and from_initiator_struct methods of the {{name}}_transaction class.
 //      Also update the comments in the driver BFM.
-//
+
   `define {{name}}_INITIATOR_STRUCT typedef struct packed  { \
 {% for txn in transVars %}
   {{txn.type}} {{txn.name}} {{txn.unpackedDim}}; \
@@ -118,7 +118,7 @@ typedef struct packed  { \
 // When changing the contents of this struct, be sure to update the to_responder_struct
 //      and from_responder_struct methods of the {{name}}_transaction class.
 //      Also update the comments in the driver BFM.
-//
+
   `define {{name}}_RESPONDER_STRUCT typedef struct packed  { \
 {% for txn in transVars %}
   {{txn.type}} {{txn.name}} {{txn.unpackedDim}}; \

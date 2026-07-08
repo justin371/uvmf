@@ -3,14 +3,14 @@
 //   Digital Industries Software
 //   Siemens EDA
 //   All Rights Reserved Worldwide
-//
+
 //   Licensed under the Apache License, Version 2.0 (the
 //   "License"); you may not use this file except in
 //   compliance with the License.  You may obtain a copy of
 //   the License at
-//
+
 //       http://www.apache.org/licenses/LICENSE-2.0
-//
+
 //   Unless required by applicable law or agreed to in
 //   writing, software distributed under the License is
 //   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -38,9 +38,9 @@
 // out of the analysis port on this component thereby filtering the incoming
 // transaction.  This can be done in the case where multiple input transactions
 // are required for a single output transaction.
-//
+
 // (see uvmf_sorting_predictor_base.jpg)
-//
+
 // PARAMETERS:
 //       T  - Incoming transaction type.
 //            Must be derived from uvmf_transaction_base.
@@ -48,7 +48,7 @@
 //            Must be derived from uvmf_transaction_base.
 //       P1 - Outgoing transaction type for port 1.
 //            Must be derived from uvmf_transaction_base.
-//
+
 // USAGE:
 //   - Supported predicted modes
 //  (start code)
@@ -61,9 +61,9 @@
 //  (end)
 
 virtual class uvmf_sorting_predictor_base #(
-   type T = uvmf_transaction_base,
-   type P0 = uvmf_transaction_base,
-   type P1 = uvmf_transaction_base
+    type T  = uvmf_transaction_base,
+    type P0 = uvmf_transaction_base,
+    type P1 = uvmf_transaction_base
 ) extends uvm_subscriber #(T);
 
   // Instantiate the analysis ports
@@ -71,37 +71,37 @@ virtual class uvmf_sorting_predictor_base #(
   uvm_analysis_port #(P1) port_1_ap;
 
   // FUNCTION: new
-  function new( string name = "", uvm_component parent = null );
-    super.new( name, parent );
+  function new(string name = "", uvm_component parent = null);
+    super.new(name, parent);
   endfunction : new
 
   // FUNCTION: build_phase
   virtual function void build_phase(uvm_phase phase);
-     // Build the analysis ports
-     port_0_ap=new( "port_0_ap", this );
-     port_1_ap=new( "port_1_ap", this );
+    // Build the analysis ports
+    port_0_ap = new("port_0_ap", this);
+    port_1_ap = new("port_1_ap", this);
   endfunction
 
   // FUNCTION: port_0_transform
   // Used to define the transform function for port 0. If the return value is
   // non null then the returned transaction is broadcasted out of port 0.
-  pure virtual function P0 port_0_transform( input T t );
+  pure virtual function P0 port_0_transform(input T t);
 
   // FUNCTION: port_1_transform
   // Used to define the transform function for port 1. If the return value is
   // non null then the returned transaction is broadcasted out of port 1.
-  pure virtual function P1 port_1_transform( input T t );
+  pure virtual function P1 port_1_transform(input T t);
 
   // FUNCTION: write
   // Automatically submit the incoming transaction t to each transform function. If
   // the return value is not null then broadcast out the appropriate analysis port.
-  virtual function void write ( input T t );
-     P0 p0;
-     P1 p1;
-     p0 = port_0_transform(t);
-     p1 = port_1_transform(t);
-     if ( p0 != null ) port_0_ap.write(p0);
-     if ( p1 != null ) port_1_ap.write(p1);
+  virtual function void write(input T t);
+    P0 p0;
+    P1 p1;
+    p0 = port_0_transform(t);
+    p1 = port_1_transform(t);
+    if (p0 != null) port_0_ap.write(p0);
+    if (p1 != null) port_1_ap.write(p1);
   endfunction : write
 
 endclass : uvmf_sorting_predictor_base

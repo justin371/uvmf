@@ -17,7 +17,7 @@ switch $tcl_platform(platform) {
   unix {
     quietly set gcc_out_ext "so"
     quietly set gcc_comp_args "-fPIC"
-  } 
+  }
   windows {
     quietly set gcc_out_ext "dll"
     quietly set gcc_comp_args ""
@@ -31,7 +31,7 @@ switch $tcl_platform(platform) {
 {% for cFile in DPIFiles %}
 set cmd [format "gcc %s -I%s/{{interface_location}}/{{name}}_pkg/dpi {{DPICompArgs}} %s %s/{{interface_location}}/{{name}}_pkg/dpi/{{cFile}}" $gcc_comp_arch $env({{vipLibEnvVariable}}) $gcc_comp_args $env({{vipLibEnvVariable}}) ]
 eval $cmd
-{% endfor %} 
+{% endfor %}
 quietly set ofiles ""
 {% for cFile in DPIFiles %}
 quietly append ofiles " " [regsub -- {([^\.]*)\.c} {{cFile}} {\1.o}]

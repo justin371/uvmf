@@ -1,25 +1,25 @@
-{% set fname = "{{vip_location}}/{{environment_location}}/{{env_name}}_env_pkg/{{src_dir}}{{name}}.svh" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{env_name}}_env_pkg/{{src_dir}}{{name}}.sv" %}
 {% set conditional = "tlm2_sysc_predictor" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
+
 //----------------------------------------------------------------------
 // DESCRIPTION: This analysis component contains analysis_exports for receiving
 //   data and analysis_ports for sending data.
-// 
-//   This analysis component has the following analysis_exports that receive the 
+
+//   This analysis component has the following analysis_exports that receive the
 //   listed transaction type.
-//   
+
 {% for export in exports %}
-//     {{export.name}} receives transactions of type  {{export.tType}}  
+//     {{export.name}} receives transactions of type  {{export.tType}}
 {% endfor %}
-//
-//   This analysis component has the following analysis_ports that can broadcast 
+
+//   This analysis component has the following analysis_ports that can broadcast
 //   the listed transaction type.
-//
+
 {% for port in ports %}
-//     {{port.name}} broadcasts transactions of type {{port.tType}} 
+//     {{port.name}} broadcasts transactions of type {{port.tType}}
 {% endfor %}
 //----------------------------------------------------------------------
 {% endblock %}
@@ -34,15 +34,15 @@ import uvmc_pkg::*;
 // `include "uvm_tlm_target_socket_decl.svh"
 // =-=-=-=-=-=-=-=-=-=-=-=-=-= BEGIN INLINED INCLUDE
 //-------------------------------------------------------------------------------------
-//
+
 // Macro to create a tlm target socket with a user-defined b_transport(), nb_transport_fw callback name
-//
+
 //-------------------------------------------------------------------------------------
 
 
-////////////////////////////////////////////
+
 /// b_transport_XXX IMP
-////////////////////////////////////////////
+
 
 `define UVM_TLM_B_TRANSPORT_IMP_DECL(SFX,imp, T, t, delay)     \
   task b_transport(T t, uvm_tlm_time delay);                   \
@@ -87,9 +87,9 @@ class uvm_tlm_b_target_socket``SFX #(type IMP=int,                      \
 endclass
 
 
-////////////////////////////////////////////
+
 /// nb_transport_fw_XXX IMP
-////////////////////////////////////////////
+
 
 `define UVM_TLM_NB_TRANSPORT_FW_IMP_DECL(SFX,imp, T, P, t, p, delay)                \
   function uvm_tlm_sync_e nb_transport_fw(T t, ref P p, input uvm_tlm_time delay);  \
@@ -223,13 +223,13 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   // Convert to TLM Generic Payload and write out to port (non-blocking)
   //   phase always BEGIN_REQ (ignored by SystemC TLM code), status should always
   //   be returned as UVM_TLM_COMPLETED (guaranteed by SystemC TLM code).
-  //
+
   virtual function void write_{{export.name}}({{export.tType}} t);
     uvm_tlm_sync_e status;
     uvm_tlm_phase_e phase;
     uvm_tlm_time delay = new("del", 1e-12);
     `uvm_info("PRED",           "Transaction Received through {{export.name}}", UVM_HIGH)
-    `uvm_info("PRED", $psprintf("            Data: %s",t.convert2string()), UVM_FULL)
+    `uvm_info("PRED", $sformatf("            Data: %s",t.convert2string()), UVM_FULL)
     status = gp_{{export.name}}.nb_transport_fw(t.to_gp(),phase,delay);
     if ( status != UVM_TLM_COMPLETED )
       `uvm_error("PRED", "SystemC TLM did not return UVM_TLM_COMPLETED")
@@ -243,7 +243,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   // FUNCTION: nb_transport_fw_gp_{{port.name}}
   // Non-Blocking nb_transport_fw callback for gp_{{port.name}} connection
   //  - executed when SystemC TLM2 wrapper writes to output analysis port "gp_{{port.name}}_ap"
-  //
+
   virtual function uvm_tlm_sync_e nb_transport_fw_gp_{{port.name}}(uvm_tlm_generic_payload gp, ref uvm_tlm_phase_e phase, input uvm_tlm_time delay);
     int  unsigned  i;
     bit  [63:0]    addr       = gp.get_address();   // actually 64 bit address
@@ -256,7 +256,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
       {{port.name}}_output_transaction = {{port.tType}}::type_id::create("{{port.name}}_output_transaction");
       {{port.name}}_output_transaction.from_gp(gp); // transfer GP data into transaction
       `uvm_info("PRED",           "Transaction Received through {{port.name}}", UVM_MEDIUM)
-      `uvm_info("PRED", $psprintf("            Data: %s",{{port.name}}_output_transaction.convert2string()), UVM_HIGH);
+      `uvm_info("PRED", $sformatf("            Data: %s",{{port.name}}_output_transaction.convert2string()), UVM_HIGH);
       {{port.name}}.write({{port.name}}_output_transaction); // write to analysis port
     end
     else begin
@@ -269,7 +269,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 
 {% endfor %}
 
-endclass 
+endclass
 
 // pragma uvmf custom external begin
 // pragma uvmf custom external end

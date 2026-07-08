@@ -1,15 +1,15 @@
-{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_monitor_proxy.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_monitor_proxy.sv" %}
 {% extends "base_template.TMPL" %}
 {% set conditional = "dpi_link" %}
 {% block description %}
 //----------------------------------------------------------------------
-//     
-// DESCRIPTION:  This class communicates with the monitor BFM using the 
+
+// DESCRIPTION:  This class communicates with the monitor BFM using the
 //      DPI link C routines.  Transaction variables are packed into a bit
-//      stream that is used as arguments to the C routines.  This allows 
+//      stream that is used as arguments to the C routines.  This allows
 //      for generic C routines that can be used with any interface package
 //      using DPI link for BFM communication.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 {% block contents %}
@@ -17,7 +17,7 @@
 typedef class {{name}}_monitor;
 
 class {{name}}_monitor_proxy {%if paramDefs|length > 0%}      #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}           
+{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}
 {% endfor %}      )
 {% endif %} extends dpi_link_proxy;
 {%if paramDefs|length > 0%}
@@ -30,7 +30,7 @@ class {{name}}_monitor_proxy {%if paramDefs|length > 0%}      #(
 
   // pragma uvmf custom class_item_additional begin
   // pragma uvmf custom class_item_additional end
-  
+
 	protected function new(string name = "{{name}}_monitor_proxy");
 		super.new(name);
                 C_initialize_monitor(get_xrtl_path());
@@ -44,13 +44,13 @@ class {{name}}_monitor_proxy {%if paramDefs|length > 0%}      #(
                   {% for config in configVars %}
 
                   {{config.type}} {{config.name}} {% if not loop.last %}, {% endif %}
-                  
+
                   {% endfor %}
                   );
                   c_bit_array_t c_{{name}}_bit_array;
                   c_{{name}}_bit_array = {act_pass,init_resp{% if configVars|length >0 %},{% endif %}{% for config in configVars %}{{config.name}}{% if not loop.last %}, {% endif %}{% endfor %} };
                   C_configure(get_xrtl_path(), c_{{name}}_bit_array);
-                  {act_pass,init_resp{% if configVars|length >0 %},{% endif %}{% for config in configVars %} {{config.name}}{% if not loop.last %}, {% endif %}{% endfor %}}= c_{{name}}_bit_array; 
+                  {act_pass,init_resp{% if configVars|length >0 %},{% endif %}{% for config in configVars %} {{config.name}}{% if not loop.last %}, {% endif %}{% endfor %}}= c_{{name}}_bit_array;
            endfunction
 
 	function void start_monitoring();

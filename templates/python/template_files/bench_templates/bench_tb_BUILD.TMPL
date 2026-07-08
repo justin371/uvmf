@@ -1,0 +1,80 @@
+{% set fname = "{{bench_location}}/{{name}}/tb/BUILD" %}
+load("@rules_verilog//verilog:defs.bzl", "verilog_dv_tb")
+
+package(default_visibility = ["//visibility:public"])
+
+tb_warning_waivers = [
+    # pragma uvmf custom tb_warning_waivers begin
+    # pragma uvmf custom tb_warning_waivers end
+]
+
+tb_shells = [
+    # pragma uvmf custom tb_shells begin
+    # pragma uvmf custom tb_shells end
+]
+
+tb_defines = {
+    # pragma uvmf custom tb_defines begin
+    "SYNOPSYS_SV": "",
+    "SVT_UVM_TECHNOLOGY": "",
+    "UVM_PACKER_MAX_BYTES=": "150000",
+    "UVM_DISABLE_AUTO_ITEM_RECORDING": "",
+    # pragma uvmf custom tb_defines end
+}
+
+tb_compile_args = [
+    # pragma uvmf custom tb_compile_args begin
+    "-diag env",
+    "-diag vpi",
+    "-timescale=1ns/1ps",
+    "-top hdl_top -top hvl_top",
+    # pragma uvmf custom tb_compile_args end
+]
+
+tb_runfiles = [
+    # pragma uvmf custom tb_runfiles begin
+    "{{name}}_tb_cfg.sv",
+    # pragma uvmf custom tb_runfiles end
+]
+
+tb_runtime_args = [
+    # pragma uvmf custom tb_runtime_args begin
+    "+ntb_disable_cnst_null_object_warning=1",
+    # pragma uvmf custom tb_runtime_args end
+]
+
+base_deps = [
+    # pragma uvmf custom base_deps begin
+    # pragma uvmf custom base_deps end
+]
+
+rtl_deps = [
+    # pragma uvmf custom rtl_deps begin
+    # pragma uvmf custom rtl_deps end
+]
+
+tb_deps = [
+    "//hw/dv/verification_ip/environment_packages/{{env_name}}_env_pkg:pkg",
+    "//hw/dv/project_benches/{{name}}/tb/testbench:hdl",
+    "//hw/dv/project_benches/{{name}}/tb/tests:tests",
+    # pragma uvmf custom tb_deps begin
+    # pragma uvmf custom tb_deps end
+]
+
+top_deps = base_deps + rtl_deps + tb_deps
+
+verilog_dv_tb(
+    name = "{{name}}_tb",
+    ccf = ["coverage.ccf"],
+    defines = tb_defines,
+    extra_compile_args = tb_compile_args,
+    extra_runfiles = tb_runfiles,
+    extra_runtime_args = tb_runtime_args,
+    shells = tb_shells,
+    verilog_config = {"{{name}}_top": "hw/dv/project_benches/{{name}}/tb/{{name}}_tb_cfg.sv"},
+    warning_waivers = tb_warning_waivers,
+    deps = top_deps,
+    simulator = "VCS",
+    # pragma uvmf custom tb_attributes begin
+    # pragma uvmf custom tb_attributes end
+)

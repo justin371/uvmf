@@ -1,16 +1,16 @@
-{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_ibs_driver.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_ibs_driver.sv" %}
 {% set conditional = "gen_inbound_streaming_driver" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//     
+
 // DESCRIPTION: This class passes transactions between the sequencer
-//        and the BFM driver interface.  It accesses the driver BFM 
+//        and the BFM driver interface.  It accesses the driver BFM
 //        through the bfm handle. This driver
 //        passes transactions to the driver BFM through the access
-//        task.  
-//
+//        task.
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -22,7 +22,7 @@ class {{name}}_ibs_driver {{macro.paramDeclare(paramDefs)|indent(8)}} extends {{
 // ****************************************************************************
 // FUNCTION : new()
 // This function is the standard SystemVerilog constructor.
-//
+
   function new( string name = "", uvm_component parent=null );
     super.new( name, parent );
   endfunction
@@ -37,7 +37,7 @@ class {{name}}_ibs_driver {{macro.paramDeclare(paramDefs)|indent(8)}} extends {{
 {% for config in configVars %}
       cfg.{{config.name}}{{macro.commalist(loop)}}
 {%- endfor %}
-);                    
+);
 {% else %}
       cfg);
 {% endif %}
@@ -48,7 +48,7 @@ class {{name}}_ibs_driver {{macro.paramDeclare(paramDefs)|indent(8)}} extends {{
     {%if not useDpiLink %}bfm.proxy = this;{% endif %}
   endfunction
 
-// ****************************************************************************              
+// ****************************************************************************
   virtual task access( inout REQ txn );
     if (configuration.initiator_responder==RESPONDER) begin
       if ({{responseOperation}}) begin
@@ -62,16 +62,16 @@ class {{name}}_ibs_driver {{macro.paramDeclare(paramDefs)|indent(8)}} extends {{
 {% for trans in transVars %}        txn.{{trans.name}}{{macro.commalist(loop)}}
 {%- endfor %}
 {% else %}
-        txn 
-{% endif %}        
+        txn
+{% endif %}
       );
-    end else begin    
+    end else begin
       bfm.access(
 {% if veloceReady %}
 {% for trans in transVars %}        txn.{{trans.name}}{{macro.commalist(loop)}}
 {%- endfor %}
 {% else %}
-      txn 
+      txn
 {% endif %}
     );
     end

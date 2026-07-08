@@ -44,14 +44,14 @@ class BaseValidator(object):
       Required('value'): str,
       Optional('comment'): str
     }
-    self.parameterDefSchema = { 
-      Required('name'): str, 
-      Required('type'): str, 
+    self.parameterDefSchema = {
+      Required('name'): str,
+      Required('type'): str,
       Optional('value'): Any(str,None)
     }
-    self.typedefSchema = { 
-      Required('name'): str, 
-      Required('type'): str 
+    self.typedefSchema = {
+      Required('name'): str,
+      Required('type'): str
     }
     self.parameterUseSchema = {
       Required('name'): str,
@@ -115,11 +115,13 @@ class BenchValidator(BaseValidator):
 
   def initializeSchema(self):
     activePassiveSchema = {
-      Required('bfm_name'): str,
+      Optional('bfm_name'): str,
+      Optional('path'): str,
       Required('value') : Any('ACTIVE','PASSIVE')
     }
     interfaceParamSchema = {
-      Required('bfm_name'): str,
+      Optional('bfm_name'): str,
+      Optional('path'): str,
       Required('value'): [ self.parameterUseSchema ]
     }
     plusargSchema = {
@@ -171,15 +173,15 @@ class ComponentValidator(BaseValidator):
       Optional('analysis_exports'):  [ analysisSchema ],
       Optional('analysis_ports'): [ analysisSchema ],
       Optional('mtlb_ready'): Any('True','False'),
-      Optional('qvip_analysis_exports'): [ analysisSchema ],
+      Optional('vip_analysis_exports'): [ analysisSchema ],
       Optional('existing_library_component'): Any('True','False'),
     }
     self.schema = Schema(mainSchema)
 
-class QVIPEnvValidator(BaseValidator):
+class VipEnvValidator(BaseValidator):
 
   def __init__(self):
-    super(QVIPEnvValidator,self).__init__()
+    super(VipEnvValidator,self).__init__()
     self.initializeSchema()
 
   def initializeSchema(self):
@@ -193,7 +195,7 @@ class QVIPEnvValidator(BaseValidator):
     }
     agentsSchema = {
       Required('name'): str,
-      Optional('type'): Any("qvip","icvip"),
+      Optional('type'): Any("vip","qvip","icvip"),
       Optional('imports'): [ str ],
       Optional('sequencer'): str,
       Optional('analysis_ports'): [ apInfoSchema ],
@@ -210,10 +212,10 @@ class QVIPEnvValidator(BaseValidator):
     }
     self.schema = Schema(mainSchema)
 
-class QVIPLibValidator(BaseValidator):
+class VipLibValidator(BaseValidator):
 
   def __init__(self):
-    super(QVIPLibValidator,self).__init__()
+    super(VipLibValidator,self).__init__()
     self.initializeSchema()
 
   def initializeSchema(self):
@@ -233,8 +235,8 @@ class EnvironmentValidator(BaseValidator):
     regModelMapSchema = {
       Required('name'): str,
       Required('interface'): str,
-      Optional('interface_type'): Any("uvmf","qvip","other"),
-      Optional('qvip_agent'): Any("True","False")
+      Optional('interface_type'): Any("uvmf","vip","other"),
+      Optional('vip_agent'): Any("True","False")
     }
     regModelSchema = {
       Optional('use_adapter'): Any("True","False"),
@@ -255,7 +257,7 @@ class EnvironmentValidator(BaseValidator):
       Required('receiver'): str,
       Optional('validate'): str
     }
-    qvipTlmSchema = {
+    vipTlmSchema = {
       Required('driver'): str,
       Required('ap_key'): str,
       Required('receiver'): str,
@@ -264,14 +266,17 @@ class EnvironmentValidator(BaseValidator):
     subenvSchema = {
       Required('name'): str,
       Required('type'): str,
+      Optional('count'): int,
       Optional('extdef'): Any('True','False'),
       Optional('parameters'): [ self.parameterUseSchema ],
       Optional('use_register_model'): Any("True","False"),
-      Optional('reg_block_instance_name'): str
+      Optional('reg_block_instance_name'): str,
+      Optional('base_address'): Any(str,int),
     }
-    qvipSubenvSchema = {
+    vipSubenvSchema = {
       Required('name'): str,
-      Required('type'): str
+      Required('type'): str,
+      Optional('count'): int,
     }
     agentSchema = {
       Required('name'): str,
@@ -286,11 +291,11 @@ class EnvironmentValidator(BaseValidator):
       Optional('parameters'): [ self.parameterUseSchema ],
       Optional('extdef'): Any('True','False')
     }
-    qvipMemoryAgentComponentSchema = {
+    vipMemoryAgentComponentSchema = {
       Required('name'): str,
       Required('type'): str,
       Required('parameters'): [ self.parameterUseSchema ],
-      Required('qvip_environment'): str
+      Required('vip_environment'): str
     }
     configVariableValueSchema = {
       Required('name'): str,
@@ -301,21 +306,21 @@ class EnvironmentValidator(BaseValidator):
       Optional('non_uvmf_components'): [ nonUvmfComponentSchema ],
       Optional('existing_library_component'): Any('True','False'),
       Optional('mtlb_ready'): Any('True','False'),
-      Optional('qvip_memory_agents'): [ qvipMemoryAgentComponentSchema ],
+      Optional('vip_memory_agents'): [ vipMemoryAgentComponentSchema ],
       Optional('analysis_components'): [ self.componentSchema ],
       Optional('scoreboards'): [ scoreboardSchema ],
       Optional('subenvs'): [ subenvSchema ],
       Optional('analysis_ports'): [ self.TLMPortSchema ],
       Optional('analysis_exports'): [ self.TLMPortSchema ],
       Optional('tlm_connections'): [ tlmSchema ],
-      Optional('qvip_connections'): [ qvipTlmSchema ],
+      Optional('vip_connections'): [ vipTlmSchema ],
       Optional('config_vars'): [ self.configVarSchema ],
       Optional('config_constraints'): [ self.constraintSchema ],
       Optional('parameters'): [ self.parameterDefSchema ],
       Optional('hvl_pkg_parameters'): [ self.parameterDefSchema ],
       Optional('imports'): [ self.importSchema ],
       Optional('config_variable_values'): [ configVariableValueSchema ],
-      Optional('qvip_subenvs'): [ qvipSubenvSchema ],
+      Optional('vip_subenvs'): [ vipSubenvSchema ],
       Optional('imp_decls'): [ { Required('name'): str } ],
       Optional('register_model'): regModelSchema,
       Optional('dpi_define'): self.dpiDefSchema,
@@ -333,15 +338,15 @@ class InterfaceValidator(BaseValidator):
     self.initializeSchema()
 
   def initializeSchema(self):
-    portSchema = { 
+    portSchema = {
       Required('name'): str,
       Required('width'): Any(str,list),
       Required('dir'): str ,
-      Optional('reset_value'): str 
+      Optional('reset_value'): str
     }
-    transactionSchema = { 
-      Required('name'): str, 
-      Required('type'): str, 
+    transactionSchema = {
+      Required('name'): str,
+      Required('type'): str,
       Optional('isrand'): Any("True","False"),
       Optional('iscompare'): Any("True","False"),
       Optional('unpacked_dimension'): str,
@@ -378,3 +383,7 @@ class InterfaceValidator(BaseValidator):
       Optional('enable_functional_coverage'): Any("True","False"),
     }
     self.schema = Schema(mainSchema)
+
+# Backward-compatible aliases for legacy imports.
+QVIPEnvValidator = VipEnvValidator
+QVIPLibValidator = VipLibValidator

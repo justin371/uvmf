@@ -1,18 +1,18 @@
-{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}read_from_file_test_mtlb.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}read_from_file_test_mtlb.sv" %}
 {% set conditional = "mtlbReady" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
+
 // Generated for MTLB flow
-//
+
 //----------------------------------------------------------------------
-//                                          
-// DESCRIPTION: This test extends test_top and makes 
+
+// DESCRIPTION: This test extends test_top and makes
 //    changes to test_top using the UVM factory type_override:
-//
+
 //    Test scenario: Use file input for stimulus generation
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 

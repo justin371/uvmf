@@ -4,17 +4,17 @@
 
 {% block description %}
 //----------------------------------------------------------------------
-//
-// DESCRIPTION: This package brings in inFact-specific 
+
+// DESCRIPTION: This package brings in inFact-specific
 //     in the environment.  These include utility sequences and top
 //     level sequences.
-//
+
 // CONTAINS:
 //     -<{{name}}_sequence_base>
 //     -<example_derived_test_sequence>
-//
+
 //----------------------------------------------------------------------
-//
+
 {% endblock %}
 
 {% block contents %}
@@ -41,14 +41,14 @@ package {{name}}_infact_sequences_pkg;
 {% endif %}
   `include "uvm_macros.svh"
 
-  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional begin
   // pragma uvmf custom package_imports_additional end
 
 {% if inFactQSO %}
 {% for bfm in bfms %}
 {% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
   `include "infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.svh"
-{% endif %}   
+{% endif %}
 {% endfor %}
 {% else %}
 {% for bfm in bfms %}
@@ -57,7 +57,7 @@ package {{name}}_infact_sequences_pkg;
 {% endif %}
 {% endfor %}
 {% endif %}
-  `include "{{src_dir}}infact_{{name}}_bench_sequence_base.svh"
+  `include "{{src_dir}}infact_{{name}}_bench_sequence_base.sv"
 
   // pragma uvmf custom package_item_additional begin
   // UVMF_CHANGE_ME : When adding new sequences to the src directory

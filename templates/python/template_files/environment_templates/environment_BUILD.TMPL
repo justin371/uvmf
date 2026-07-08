@@ -1,0 +1,40 @@
+{% set fname = "{{vip_location}}/{{environment_location}}/{{name}}_env_pkg/BUILD" %}
+load("@rules_verilog//verilog:defs.bzl", "verilog_dv_library")
+#load("@draconian_uvm//:duvm.bzl", "duvm_test")
+
+package(default_visibility = ["//visibility:public"])
+
+verilog_dv_library(
+    name = "pkg",
+    srcs = glob([
+        "*.sv*",
+        "src/**/*.sv*",
+        "registers/*.sv*",
+    ]),
+    in_flist = [
+        # pragma uvmf custom in_flist_prepend begin
+        # pragma uvmf custom in_flist_prepend end
+        "src/{{name}}_env_typedefs.svh",
+{% for regModel in regModels %}
+        "registers/{{regModel.regBlockClass}}.sv",
+{% endfor %}
+    ] + glob([
+        "*_pkg.sv",
+    ]) + glob([
+        "src/*_intf.sv",
+    ]),
+    deps = [
+        "@uvmf//uvmf_base_pkg:pkg",
+        "@dv_common//cmn:pkg",
+        "@cluelib_pkg//:pkg",
+        "@svlib_pkg//:pkg",
+{% for pkg in agent_pkgs %}
+        "//hw/dv/verification_ip/interface_packages/{{pkg}}_pkg:pkg",
+{% endfor %}
+{% for pkg in env_pkgs %}
+        "//hw/dv/verification_ip/environment_packages/{{pkg}}_env_pkg:pkg",
+{% endfor %}
+        # pragma uvmf custom deps_additional begin
+        # pragma uvmf custom deps_additional end
+    ],
+)

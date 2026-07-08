@@ -1,14 +1,14 @@
-{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_transaction.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_transaction.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
 //----------------------------------------------------------------------
-//     
+
 // DESCRIPTION: This class defines the variables required for an {{name}}
 //    transaction.  Class variables to be displayed in waveform transaction
 //    viewing are added to the transaction viewing stream in the add_to_wave
 //    function.
-//
+
 //----------------------------------------------------------------------
 {% endblock %}
 
@@ -49,13 +49,13 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   // This function packs transaction variables into a {{name}}_monitor_s
   // structure.  The function returns the handle to the {{name}}_monitor_struct.
   // This function is defined in {{name}}_macros.svh
-  `{{name}}_TO_MONITOR_STRUCT_FUNCTION 
+  `{{name}}_TO_MONITOR_STRUCT_FUNCTION
   //*******************************************************************
   // FUNCTION: from_monitor_struct()
-  // This function unpacks the struct provided as an argument into transaction 
+  // This function unpacks the struct provided as an argument into transaction
   // variables of this class.
   // This function is defined in {{name}}_macros.svh
-  `{{name}}_FROM_MONITOR_STRUCT_FUNCTION 
+  `{{name}}_FROM_MONITOR_STRUCT_FUNCTION
 
   //*******************************************************************
   // Initiator macro used by {{name}}_driver and {{name}}_driver_bfm
@@ -68,13 +68,13 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   // This function packs transaction variables into a {{name}}_initiator_s
   // structure.  The function returns the handle to the {{name}}_initiator_struct.
   // This function is defined in {{name}}_macros.svh
-  `{{name}}_TO_INITIATOR_STRUCT_FUNCTION  
+  `{{name}}_TO_INITIATOR_STRUCT_FUNCTION
   //*******************************************************************
   // FUNCTION: from_initiator_struct()
-  // This function unpacks the struct provided as an argument into transaction 
+  // This function unpacks the struct provided as an argument into transaction
   // variables of this class.
   // This function is defined in {{name}}_macros.svh
-  `{{name}}_FROM_INITIATOR_STRUCT_FUNCTION 
+  `{{name}}_FROM_INITIATOR_STRUCT_FUNCTION
 
   //*******************************************************************
   // Responder macro used by {{name}}_driver and {{name}}_driver_bfm
@@ -87,27 +87,27 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   // This function packs transaction variables into a {{name}}_responder_s
   // structure.  The function returns the handle to the {{name}}_responder_struct.
   // This function is defined in {{name}}_macros.svh
-  `{{name}}_TO_RESPONDER_STRUCT_FUNCTION 
+  `{{name}}_TO_RESPONDER_STRUCT_FUNCTION
   //*******************************************************************
   // FUNCTION: from_responder_struct()
-  // This function unpacks the struct provided as an argument into transaction 
+  // This function unpacks the struct provided as an argument into transaction
   // variables of this class.
   // This function is defined in {{name}}_macros.svh
-  `{{name}}_FROM_RESPONDER_STRUCT_FUNCTION 
+  `{{name}}_FROM_RESPONDER_STRUCT_FUNCTION
 {% endif %}
   // ****************************************************************************
   // FUNCTION : new()
   // This function is the standard SystemVerilog constructor.
-  //
+
   function new( string name = "" );
     super.new( name );
   endfunction
 
   // ****************************************************************************
   // FUNCTION: convert2string()
-  // This function converts all variables in this class to a single string for 
+  // This function converts all variables in this class to a single string for
   // logfile reporting.
-  //
+
   virtual function string convert2string();
     // pragma uvmf custom convert2string begin
     // UVMF_CHANGE_ME : Customize format if desired.
@@ -119,7 +119,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   // FUNCTION: do_print()
   // This function is automatically called when the .print() function
   // is called on this class.
-  //
+
   virtual function void do_print(uvm_printer printer);
     // pragma uvmf custom do_print begin
     // UVMF_CHANGE_ME : Current contents of do_print allows for the use of UVM 1.1d, 1.2 or P1800.2.
@@ -132,7 +132,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   // FUNCTION: do_compare()
   // This function is automatically called when the .compare() function
   // is called on this class.
-  //
+
   virtual function bit do_compare (uvm_object rhs, uvm_comparer comparer);
     {{name}}_transaction {{macro.paramUse(paramDefs)|indent(8)}} RHS;
     if (!$cast(RHS,rhs)) return 0;
@@ -149,7 +149,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   // FUNCTION: do_copy()
   // This function is automatically called when the .copy() function
   // is called on this class.
-  //
+
   virtual function void do_copy (uvm_object rhs);
     {{name}}_transaction {{macro.paramUse(paramDefs)|indent(8)}} RHS;
     if(!$cast(RHS,rhs))begin
@@ -163,13 +163,14 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     // pragma uvmf custom do_copy end
   endfunction
 
+{% if legacy_profile %}
   // ****************************************************************************
   // FUNCTION: add_to_wave()
-  // This function is used to display variables in this class in the waveform 
-  // viewer.  The start_time and end_time variables must be set before this 
+  // This function is used to display variables in this class in the waveform
+  // viewer.  The start_time and end_time variables must be set before this
   // function is called.  If the start_time and end_time variables are not set
   // the transaction will be hidden at 0ns on the waveform display.
-  // 
+
   virtual function void add_to_wave(int transaction_viewing_stream_h);
     `ifdef QUESTA
     if (transaction_view_h == 0) begin
@@ -190,6 +191,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     $free_transaction(transaction_view_h);
     `endif // QUESTA
   endfunction
+{% endif %}
 
 endclass
 

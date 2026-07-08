@@ -1,8 +1,8 @@
 # The block_c environment YAML example shows what a YAML configuration
-# file looks like that incorporates QVIP in addition to custom non-QVIP
-# interfaces. The "qvip_subenvs" section instantiates a "qvip_agents"
-# sub-environment that was produced by the QVIP Configurator utility.
-# The command file to produce this QVIP sub-environment is located
+# file looks like that incorporates a legacy VIP sub-environment in addition to
+# custom non-VIP interfaces. The "vip_subenvs" section instantiates a
+# "qvip_agents" sub-environment that was produced by the legacy VIP configurator utility.
+# The command file to produce this VIP sub-environment is located
 # in $UVMF_HOME/templates/qvip_configurator.
 uvmf:
   environments:
@@ -14,7 +14,7 @@ uvmf:
           type: "mem"
         - name: "pkt_out"
           type: "pkt"
-      qvip_subenvs:
+      vip_subenvs:
         - name: "qvip_env"
           type: "qvip_agents"
       analysis_components:
@@ -33,7 +33,7 @@ uvmf:
         - name:       "apb3_cfg_sb"
           sb_type:    "uvmf_in_order_scoreboard"
           trans_type: "mvc_sequence_item_base"
-      qvip_connections:
+      vip_connections:
         - ap_key:   "trans_ap"
           driver:   "qvip_env_axi4_master_0"
           receiver: "blk_c_pred.axi4_master_0_ae"

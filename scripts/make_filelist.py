@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # ---------------------------------------------------------------------------
-# Copyright 2014 Mentor Graphics Corporation 
-#    All Rights Reserved 
-# 
-# THIS WORK CONTAINS TRADE SECRET 
-# AND PROPRIETARY INFORMATION WHICH IS THE 
-# PROPERTY OF MENTOR GRAPHICS 
-# CORPORATION OR ITS LICENSORS AND IS 
-# SUBJECT TO LICENSE TERMS. 
-# 
+# Copyright 2014 Mentor Graphics Corporation
+#    All Rights Reserved
+#
+# THIS WORK CONTAINS TRADE SECRET
+# AND PROPRIETARY INFORMATION WHICH IS THE
+# PROPERTY OF MENTOR GRAPHICS
+# CORPORATION OR ITS LICENSORS AND IS
+# SUBJECT TO LICENSE TERMS.
+#
 # ---------------------------------------------------------------------------
 #   WARRANTY:
 #   Use all material in this file at your own risk.  Mentor Graphics, Corp.
@@ -39,8 +39,8 @@ def resolve_path(path):
     cur_path = os.getcwd()
     try:
         os.chdir(path)
-    except:
-        print "Could not cd to {0}".format(path)
+    except OSError:
+        print("Could not cd to {0}".format(path))
         sys.exit(1)
     resolved_path = os.getcwd()
     os.chdir(cur_path)
@@ -59,13 +59,13 @@ def not_blank(line_str):
 
 # Returns true if this line does not start //
 def not_comment(line_str):
-    return not re.search("\A\/\/", line_str)
+    return not re.search(r"\A//", line_str)
 
 # All vinfo files get stored in Vinfo objects.  When you create a Vinfo object
-# you also create Vinfo objects for all the referenced Vinfo files.  
-# This continues to the leaf Vinfo files. 
+# you also create Vinfo objects for all the referenced Vinfo files.
+# This continues to the leaf Vinfo files.
 
-# The Vinfo class is intended to be treated as a set of 
+# The Vinfo class is intended to be treated as a set of
 # singletons. You use the get() method to get a new Vinfo object.  The get
 # method checks to see whether there is already a Vinfo object for the given
 # path and returns a handle to that object if it exists.  Otherwise it creates
@@ -82,12 +82,12 @@ class Vinfo:
     @staticmethod
     def get(filepath):
         if relative_path(filepath):
-            print "Relative paths not allowed to get Vinfo object.  You passed {0}".format(filepath)
+            print("Relative paths not allowed to get Vinfo object.  You passed {0}".format(filepath))
             sys.exit(1)
         filepath = os.path.expandvars(filepath)
         if not filepath in Vinfo.dictionary:
             if (options.debug):
-                print "Creating Vinfo: {0}".format(filepath)
+                print("Creating Vinfo: {0}".format(filepath))
             Vinfo.dictionary[filepath] = Vinfo(filepath)
 
         return Vinfo.dictionary[filepath]
@@ -98,9 +98,9 @@ class Vinfo:
     def __init__(self,filepath):
         """Init needs full path to file name"""
 
-        # Store data about the filepath to this Vinfo file. 
+        # Store data about the filepath to this Vinfo file.
         if relative_path(filepath):
-            print "Relative paths not allowed to create Vinfo object.  You passed {0}".format(filepath)
+            print("Relative paths not allowed to create Vinfo object.  You passed {0}".format(filepath))
             sys.exit(1)
         self.filepath = os.path.expandvars(filepath)
         self.filename = get_file(self.filepath)
@@ -111,8 +111,8 @@ class Vinfo:
         # Now that we have the path to the vinfo we can start working on it
         # First handle the macros
 
-        # Assumes there is a perl script named expand_ifdef_stdout 
-        # in the same dir as this script and that we have 
+        # Assumes there is a perl script named expand_ifdef_stdout
+        # in the same dir as this script and that we have
         # execute permissions on it.
 
         if (options.defines):
@@ -137,10 +137,10 @@ class Vinfo:
 
         # run the perl script that processes macros.
         proc = subprocess.Popen([expand_ifdef, "+define+" + define_list, self.filepath], stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+                                stderr=subprocess.PIPE, text=True)
         (vinfo_lines_str,err_str) = proc.communicate()
         if (proc.returncode):
-            print "Error in expand_ifdef_stdout: {0}".format(err_str)
+            print("Error in expand_ifdef_stdout: {0}".format(err_str))
             sys.exit(1)
 
         vinfo_lines_str = vinfo_lines_str.strip("\n")
@@ -163,21 +163,21 @@ class Vinfo:
         # have a @use token.  We use those lines to create additional Vinfo
         # objects and store them in our dependency list.  We use the get()
         # method so that we don't create Vinfo objects for objects that we've
-        # already made. 
+        # already made.
 
         # Print the vinfo file name for clarity in the .vf file.
         self.vf_lines = ["\n\n// ------- {0} --------".format(self.filename)]
 
 
-        use_re_search = "\A.*\@use\s+(.*)$"  # looks for @use
+        use_re_search = r"\A.*@use\s+(.*)$"  # looks for @use
         self.dependencies=[]
         for line in self.vinfo_lines:
             line = line.strip()
             line_re = re.search(use_re_search, line)
 
-            if (line_re == None):  
+            if (line_re == None):
                 # Not a @use line. Put it in the final vf file list.
-                comment_re = re.search("\A.*[\+\-]", line)
+                comment_re = re.search(r"\A.*[+-]", line)
                 # ignore options
                 if (comment_re == None) and relative_path(line):
                     line = "{0}/{1}".format(self.dirpath,line)
@@ -189,8 +189,8 @@ class Vinfo:
                     dep_vinfo_file = "{0}/{1}".format(self.dirpath,dep_vinfo_file)
                 abs_vinfo_file = os.path.abspath(dep_vinfo_file)
                 if (not os.path.exists(abs_vinfo_file)):
-                    print "Error parsing {0}".format(self.filepath)
-                    print "Unable to find @use file {0}".format(abs_vinfo_file)
+                    print("Error parsing {0}".format(self.filepath))
+                    print("Unable to find @use file {0}".format(abs_vinfo_file))
                     sys.exit(1)
 
                 dep_vinfo = Vinfo.get(abs_vinfo_file)
@@ -201,7 +201,7 @@ class Vinfo:
 
 # The format for dependencies works like this:
 
-# Given that a car depends on an engine and an engine depends upon pistons 
+# Given that a car depends on an engine and an engine depends upon pistons
 # Also that a scooter depends on an engine we get the following:
 
 # engine car
@@ -243,11 +243,11 @@ class Vinfo:
         else:
             # use tsort to sort dependencies (not to be confused with a file sort)
             proc = subprocess.Popen(["tsort"], stdout=subprocess.PIPE,
-                                    stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+                                    stdin=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             (vf_filelist_str, err) = proc.communicate(input=dependency_str)
             assert not proc.returncode, "Error calling tsort to sort files: {0}".format(err)
 
-        # vf_filelist_string is a list of Vinfo paths sorted by tsort.  
+        # vf_filelist_string is a list of Vinfo paths sorted by tsort.
         # The Vinfo.dictionary uses these Vinfo paths as keys.  We use this
         # list to get all the Vinfo files in the correct order and print out
         # their vf_lines list.
@@ -255,7 +255,7 @@ class Vinfo:
             vf_filelist_str = vf_filelist_str.strip()
             vf_filelist = vf_filelist_str.split("\n")
             if (options.debug):
-                print "The Vinfo File Order:\n{0}".format(vf_filelist_str)
+                print("The Vinfo File Order:\n{0}".format(vf_filelist_str))
                 # Given the list of vinfo paths, make a vf_file
             for vinfo_file in vf_filelist:
                 vf_lines = Vinfo.dictionary[vinfo_file].vf_lines
@@ -286,7 +286,7 @@ if (len(args) != 1):
 
 vinfo_filename = args[0]
 
-arg_re = re.search("(\A.*\/)(.*$)", vinfo_filename)
+arg_re = re.search(r"(\A.*/)(.*$)", vinfo_filename)
 
 if arg_re:
     base_path = resolve_path(arg_re.group(1))
@@ -301,11 +301,11 @@ base = fileparts[-2]
 extension = fileparts[-1]
 
 if (len(fileparts) != 2):
-    print "Error: vinfo file must only have one extension.  You suppled '" + vinfo_filename + "'"
+    print("Error: vinfo file must only have one extension.  You suppled '" + vinfo_filename + "'")
     sys.exit(1)
 
 if (extension != "vinfo"):
-    print "Error: vinfo file must have the extension 'vinfo'.  You suppled '" + vinfo_filename + "'"
+    print("Error: vinfo file must have the extension 'vinfo'.  You suppled '" + vinfo_filename + "'")
     sys.exit(1)
 
 if (options.output_file):
@@ -317,7 +317,7 @@ if (relative_path(vinfo_filename)):
     vinfo_filename = os.getcwd() + "/" + vinfo_filename
 
 if not os.path.exists(vinfo_filename):
-    print "Error: " + vinfo_filename + " does not exist"
+    print("Error: " + vinfo_filename + " does not exist")
     sys.exit(1)
 
 
@@ -326,7 +326,7 @@ if not os.path.exists(vinfo_filename):
 
 base_vinfo = Vinfo.get(vinfo_filename)
 
-print "writing ", final_vf_filename
+print("writing ", final_vf_filename)
 vf_filestr = base_vinfo.get_vf_file_str()
 vf_f = open(final_vf_filename, 'w')
 vf_f.write(vf_filestr)

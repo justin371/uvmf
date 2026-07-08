@@ -2,11 +2,11 @@
 {% set conditional = "mtlbReady" %}
 {% set isExecutable = True %}
 #----------------------------------------------------------------------
-#     
+#
 # DESCRIPTION: This script replaces base files with mtlb flow files
 #
 #----------------------------------------------------------------------
 {% for acName in acTypes %}
-cp -f {{src_dir}}{{acName}}_mtlb.svh {{src_dir}}{{acName}}.svh
+cp -f {{src_dir}}{{acName}}_mtlb.sv {{src_dir}}{{acName}}.sv
 {% endfor %}
 cp -f {{name}}_env_pkg_mtlb.sv {{name}}_env_pkg.sv
