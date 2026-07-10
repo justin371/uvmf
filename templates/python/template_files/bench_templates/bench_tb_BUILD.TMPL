@@ -63,6 +63,7 @@ tb_deps = [
 top_deps = base_deps + rtl_deps + tb_deps
 
 verilog_dv_tb(
+    # pragma uvmf custom tb_attributes begin
     name = "{{name}}_tb",
     defines = tb_defines,
     extra_compile_args = tb_compile_args,
@@ -72,6 +73,8 @@ verilog_dv_tb(
     warning_waivers = tb_warning_waivers,
     deps = top_deps,
     simulator = "VCS",
-    # pragma uvmf custom tb_attributes begin
     # pragma uvmf custom tb_attributes end
 )
+
+# pragma uvmf custom additional_tbs begin
+# pragma uvmf custom additional_tbs end

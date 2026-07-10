@@ -258,6 +258,30 @@ class RegenerationSafetyTest(unittest.TestCase):
       self.assertEqual(old_file.read_text(encoding="utf-8"),"new\n")
       self.assertEqual(merge.missing_blocks,{str(old_file.resolve()): ["removed"]})
 
+  def test_empty_legacy_tb_attributes_uses_new_defaults(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      old_root = root / "old"
+      new_root = root / "new"
+      old_root.mkdir()
+      new_root.mkdir()
+      old_file = old_root / "BUILD"
+      new_file = new_root / "BUILD"
+      old_file.write_text("verilog_dv_tb(\n    name = \"old\",\n    # pragma uvmf custom tb_attributes begin\n    # pragma uvmf custom tb_attributes end\n)\n",encoding="utf-8")
+      new_file.write_text("verilog_dv_tb(\n    # pragma uvmf custom tb_attributes begin\n    name = \"new\",\n    simulator = \"VCS\",\n    # pragma uvmf custom tb_attributes end\n)\n",encoding="utf-8")
+
+      parser = Parse(root=str(old_root),quiet=True)
+      parser.parse_file(str(old_file))
+      merge = Merge(
+        outdir=str(old_root),skip_missing_blocks=False,
+        new_root=str(new_root),old_root=str(old_root),quiet=True,
+      )
+      merge.load_data(parser.data)
+      merge.traverse_dir(str(new_root))
+
+      self.assertIn('name = "new"',old_file.read_text(encoding="utf-8"))
+      self.assertIn('simulator = "VCS"',old_file.read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
   unittest.main()

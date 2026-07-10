@@ -303,6 +303,8 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertNotIn("coverage.ccf",tb_build)
       self.assertNotIn("soc_tb_cfg.sv",tb_build)
       self.assertIn('simulator = "VCS"',tb_build)
+      self.assertIn("pragma uvmf custom tb_attributes begin",tb_build)
+      self.assertIn("pragma uvmf custom additional_tbs begin",tb_build)
       self.assertIn('name = "pkg"',(tb / "parameters" / "BUILD").read_text(encoding="utf-8"))
       testbench_build = (tb / "testbench" / "BUILD").read_text(encoding="utf-8")
       self.assertIn('exports_files(glob(["*.svh"]))',testbench_build)
@@ -314,6 +316,9 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertNotIn('"//hw/dv/project_benches/soc/tb/testbench:tb_defines.svh"',tests_build)
       self.assertIn("pragma uvmf custom in_flist_prepend begin",tests_build)
       self.assertIn('"+wdog=": "1000000"',tests_build)
+      self.assertIn("pragma uvmf custom test_bzl_loads begin",tests_build)
+      self.assertIn("pragma uvmf custom sim_opts begin",tests_build)
+      self.assertIn("pragma uvmf custom additional_test_cfgs begin",tests_build)
       self.assertIn("demo_test_configs()",tests_build)
       self.assertIn('tb = "//hw/dv/project_benches/soc/tb:soc_tb"',tests_build)
       demo_tests = (tb / "tests" / "demo_tests.bzl").read_text(encoding="utf-8")
@@ -398,6 +403,36 @@ class SocIntegrationTest(unittest.TestCase):
         "    # pragma uvmf custom tb_deps end",
       )
       build.write_text("# outside custom block\n"+content,encoding="utf-8")
+      tests_build = output / "project_benches" / "soc" / "tb" / "tests" / "BUILD"
+      content = tests_build.read_text(encoding="utf-8")
+      content = content.replace(
+        "# pragma uvmf custom test_bzl_loads end",
+        'load(":custom_tests.bzl", "custom_test_configs")\n'
+        "# pragma uvmf custom test_bzl_loads end",
+      ).replace(
+        "        # pragma uvmf custom sim_opts end",
+        '        "+custom=": "1",\n'
+        "        # pragma uvmf custom sim_opts end",
+      ).replace(
+        "# pragma uvmf custom additional_test_cfgs end",
+        'verilog_dv_test_cfg(name = "custom", inherits = [":base"])\n'
+        "# pragma uvmf custom additional_test_cfgs end",
+      ).replace(
+        "# pragma uvmf custom test_configs end",
+        "custom_test_configs()\n"
+        "# pragma uvmf custom test_configs end",
+      )
+      tests_build.write_text(content,encoding="utf-8")
+      content = build.read_text(encoding="utf-8").replace(
+        "    # pragma uvmf custom tb_attributes end",
+        '    tags = ["custom"],\n'
+        "    # pragma uvmf custom tb_attributes end",
+      ).replace(
+        "# pragma uvmf custom additional_tbs end",
+        'verilog_dv_tb(name = "extra_tb", deps = top_deps)\n'
+        "# pragma uvmf custom additional_tbs end",
+      )
+      build.write_text(content,encoding="utf-8")
       project_file = output / "project_benches" / "soc" / "tb" / "user_owned.sv"
       project_file.write_text("module user_owned; endmodule\n",encoding="utf-8")
       obsolete_file = output / "verification_ip" / "legacy.compile"
@@ -413,6 +448,12 @@ class SocIntegrationTest(unittest.TestCase):
 
       self.assertEqual(merged.returncode,0,merged.stderr)
       self.assertIn("//hw/dv/custom:pkg",build.read_text(encoding="utf-8"))
+      self.assertIn('tags = ["custom"]',build.read_text(encoding="utf-8"))
+      self.assertIn('name = "extra_tb"',build.read_text(encoding="utf-8"))
+      self.assertIn('load(":custom_tests.bzl", "custom_test_configs")',tests_build.read_text(encoding="utf-8"))
+      self.assertIn('"+custom=": "1"',tests_build.read_text(encoding="utf-8"))
+      self.assertIn('name = "custom"',tests_build.read_text(encoding="utf-8"))
+      self.assertIn("custom_test_configs()",tests_build.read_text(encoding="utf-8"))
       self.assertEqual(project_file.read_text(encoding="utf-8"),"module user_owned; endmodule\n")
       self.assertFalse(obsolete_file.exists())
       self.assertFalse(obsolete_dir.exists())

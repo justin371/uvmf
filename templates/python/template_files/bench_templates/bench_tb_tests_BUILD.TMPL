@@ -1,6 +1,8 @@
 {% set fname = "{{bench_location}}/{{name}}/tb/tests/BUILD" %}
 load("@rules_verilog//verilog:defs.bzl", "verilog_dv_library", "verilog_dv_test_cfg")
 load(":demo_tests.bzl", "demo_test_configs")
+# pragma uvmf custom test_bzl_loads begin
+# pragma uvmf custom test_bzl_loads end
 
 package(default_visibility = ["//visibility:public"])
 
@@ -29,14 +31,19 @@ verilog_dv_test_cfg(
     name = "base",
     abstract = True,
     sim_opts = {
+        # pragma uvmf custom sim_opts begin
         "+PLLTS12FFCLJFRACB_FORCE_VDDREG": "",
         "+wdog=": "1000000",
         "+assert_reinitialization_delay=": "50",
         "+ctxlen=": "50",
         "+filelen=": "30",
+        # pragma uvmf custom sim_opts end
     },
     tb = "//hw/dv/project_benches/{{name}}/tb:{{name}}_tb",
 )
+
+# pragma uvmf custom additional_test_cfgs begin
+# pragma uvmf custom additional_test_cfgs end
 
 demo_test_configs()
 

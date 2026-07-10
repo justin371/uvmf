@@ -117,8 +117,13 @@ class Merge(Base):
         self.found_blocks[self.old_fname][-1]['begin'] = 0
         self.found_blocks[self.old_fname][-1]['end'] = 0
         pass
-      self.ofs.write(self.rd[self.old_fname][label_name]['content'])
-      self.block_copied = True
+      old_content = self.rd[self.old_fname][label_name]['content']
+      # Keep defaults when upgrading from the old empty tb_attributes block.
+      if label_name == 'tb_attributes' and not old_content.strip():
+        self.block_copied = False
+      else:
+        self.ofs.write(old_content)
+        self.block_copied = True
       # Also update the data structure to note that the label was used (we track this later on)
       self.rd[self.old_fname][label_name]['block_used'] = True
 
