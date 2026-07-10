@@ -220,6 +220,17 @@ class DataClass:
     'use_coemu_clk_rst_gen','use_dpi_link','use_explicit_prediction',
     'use_register_model','veloce_ready','vip_agent',
   }
+  LIST_KEYS = {
+    'active_passive','additional_tops','agents','analysis_components',
+    'analysis_exports','analysis_ports','bench_plusargs','config_constraints',
+    'config_variable_values','config_vars','directory_variables',
+    'emulation_vip_libs','exports','hdl_pkg_parameters','hdl_typedefs',
+    'hvl_pkg_parameters','hvl_typedefs','imp_decls','imports',
+    'interface_params','maps','non_uvmf_components','parameters','ports',
+    'scoreboards','subenvs','sv_args','tlm_connections',
+    'transaction_constraints','transaction_vars','typedefs','uvmc_files',
+    'vip_analysis_exports','vip_connections','vip_memory_agents','vip_subenvs',
+  }
 
   def __init__(self,parser,debug=False):
     self.data = {'interfaces':{},'environments':{},'benches':{},'util_components':{},'vip_environments':{},'vip_library':{},'global':{}}
@@ -245,6 +256,8 @@ class DataClass:
     return value
 
   def normalizeBooleanValues(self,value,key=None):
+    if value is None and key in self.LIST_KEYS:
+      return []
     if isinstance(value,dict):
       return {k:self.normalizeBooleanValues(v,k) for k,v in value.items()}
     if isinstance(value,list):

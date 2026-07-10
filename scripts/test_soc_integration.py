@@ -203,6 +203,25 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertNotIn("repeat (25)",content)
       self.assertNotIn("_rand_seq",content)
 
+  def test_empty_yaml_lists_are_normalized(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      config = Path(tmp) / "empty_lists.yaml"
+      config.write_text(
+        "uvmf:\n"
+        "  environments:\n"
+        "    sys:\n"
+        "      agents:\n"
+        "      subenvs:\n"
+        "      analysis_ports:\n",
+        encoding="utf-8",
+      )
+      data = self.data_object()
+      data.parseFile(str(config))
+      data.validate()
+      self.assertEqual(data.data["environments"]["sys"]["agents"],[])
+      self.assertEqual(data.data["environments"]["sys"]["subenvs"],[])
+      self.assertEqual(data.data["environments"]["sys"]["analysis_ports"],[])
+
   def test_environment_package_declares_sequences_before_environment(self):
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
