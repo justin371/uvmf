@@ -54,6 +54,8 @@ class Merge(Base):
     self.new_directories = []
     self.yaml_imported = False
     self.block_copied = False
+    self.pending_copies = []
+    self.pending_replacements = []
 
   def load_yaml(self,fname):
     self.yaml_imported = True
@@ -86,18 +88,7 @@ class Merge(Base):
     self.old_fname = self.replace_basedir(new_fname,self.new_root,self.old_root)
     ## Check if old file doesn't exist in the new. If it doesn't, we need to copy from new to old
     if not os.path.exists(self.old_fname):
-      if not os.path.exists(os.path.dirname(self.old_fname)):
-        ## Path to this file doesn't exist, need to create it
-        try:
-          os.makedirs(os.path.dirname(self.old_fname))
-        except:
-          raise UserError("Unable to create new path {0} during merge. Permissions issue?".format(os.path.dirname(self.old_fname)))
-      try:
-        copyfile(new_fname,self.old_fname)
-      except:
-        raise UserError("Unable to copy {0} over to {1} during merge. Permissions issue?".format(new_fname,self.old_fname))
-      ## Make note of this file we copied over for later reporting
-      self.copied_files.append(self.old_fname)
+      self.pending_copies.append((new_fname,self.old_fname))
       ## Function returns False if we do not need to process this file any further
       return False
     elif not (self.old_fname in self.rd):
@@ -185,13 +176,45 @@ class Merge(Base):
             os.remove(self.tmp_fname)
           raise UserError('Potential loss of hand edits:\n  File: {0}\n  Label: "{1}"\nUse --merge_skip_missing_blocks to proceed and produce list of labels at end'.format(self.old_fname,l))
     os.chmod(self.tmp_fname,self.old_mode)
-    os.replace(self.tmp_fname,self.old_fname)
+    self.pending_replacements.append((self.tmp_fname,self.old_fname))
+
+  def apply_pending(self):
+    try:
+      for source,destination in self.pending_copies:
+        os.makedirs(os.path.dirname(destination),exist_ok=True)
+        copyfile(source,destination)
+        self.copied_files.append(destination)
+      for source,destination in self.pending_replacements:
+        os.replace(source,destination)
+    finally:
+      for source,destination in self.pending_replacements:
+        if os.path.exists(source):
+          os.remove(source)
+      self.pending_copies = []
+      self.pending_replacements = []
 
   def parse_file(self,fname):
-    self.regen.parse_file(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,block_outside_fn=self.block_outside,post_open_fn=self.file_end)
+    try:
+      self.regen.parse_file(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,block_outside_fn=self.block_outside,post_open_fn=self.file_end)
+      self.apply_pending()
+    except:
+      self.apply_pending_cleanup()
+      raise
 
   def traverse_dir(self,fname):
-    self.regen.traverse_dir(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,block_outside_fn=self.block_outside,post_open_fn=self.file_end)
+    try:
+      self.regen.traverse_dir(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,block_outside_fn=self.block_outside,post_open_fn=self.file_end)
+      self.apply_pending()
+    except:
+      self.apply_pending_cleanup()
+      raise
+
+  def apply_pending_cleanup(self):
+    for source,destination in self.pending_replacements:
+      if os.path.exists(source):
+        os.remove(source)
+    self.pending_copies = []
+    self.pending_replacements = []
 
 class Parse(Base):
 
@@ -269,7 +292,7 @@ class Regen:
     if not os.path.exists(dname):
       raise UserError("Input directory {0} does not exist".format(dname))
     for root,dirs,files in os.walk(dname):
-      for file in files:
+      for file in sorted(files):
         if (not filter_dirs) or (os.path.abspath(root) in filter_dirs):
           self.parse_file(os.path.abspath(root+os.sep+file),pre_open_fn,block_begin_fn,block_end_fn,block_inside_fn,block_outside_fn,post_open_fn)
 

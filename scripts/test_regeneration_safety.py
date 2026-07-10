@@ -184,6 +184,38 @@ class RegenerationSafetyTest(unittest.TestCase):
       self.assertEqual(old_file.read_text(encoding="utf-8"),"original content\n")
       self.assertEqual(list(old_root.glob("*.uvmf_merge_tmp")),[])
 
+  def test_failed_directory_merge_keeps_all_original_files(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      old_root = root / "old"
+      new_root = root / "new"
+      old_root.mkdir()
+      new_root.mkdir()
+      old_a = old_root / "a.sv"
+      old_z = old_root / "z.sv"
+      new_a = new_root / "a.sv"
+      new_z = new_root / "z.sv"
+      old_a.write_text("old a\n// pragma uvmf custom keep begin\nuser a\n// pragma uvmf custom keep end\n",encoding="utf-8")
+      old_z.write_text("old z\n// pragma uvmf custom lost begin\nuser z\n// pragma uvmf custom lost end\n",encoding="utf-8")
+      new_a.write_text("new a\n// pragma uvmf custom keep begin\n// pragma uvmf custom keep end\n",encoding="utf-8")
+      new_z.write_text("new z\n",encoding="utf-8")
+
+      merge = Merge(
+        outdir=str(old_root),skip_missing_blocks=False,
+        new_root=str(new_root),old_root=str(old_root),quiet=True,
+      )
+      merge.rd = {
+        str(old_a.resolve()): {"keep": {"content": "user a\n","begin_line": 2,"end_line": 4}},
+        str(old_z.resolve()): {"lost": {"content": "user z\n","begin_line": 2,"end_line": 4}},
+      }
+
+      with self.assertRaises(UserError):
+        merge.traverse_dir(str(new_root))
+
+      self.assertTrue(old_a.read_text(encoding="utf-8").startswith("old a\n"))
+      self.assertTrue(old_z.read_text(encoding="utf-8").startswith("old z\n"))
+      self.assertEqual(list(old_root.glob("*.uvmf_merge_tmp")),[])
+
 
 if __name__ == "__main__":
   unittest.main()

@@ -11,7 +11,8 @@ verilog_dv_library(
         "*.sv*",
     ]),
     in_flist = [
-        "//hw/dv/project_benches/{{name}}/tb/testbench:tb_defines.svh",
+        # pragma uvmf custom in_flist_prepend begin
+        # pragma uvmf custom in_flist_prepend end
     ] + glob([
         "*_pkg.sv",
     ]),

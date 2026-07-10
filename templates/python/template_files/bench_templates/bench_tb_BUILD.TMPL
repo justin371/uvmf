@@ -33,7 +33,6 @@ tb_compile_args = [
 
 tb_runfiles = [
     # pragma uvmf custom tb_runfiles begin
-    "{{name}}_tb_cfg.sv",
     # pragma uvmf custom tb_runfiles end
 ]
 
@@ -65,13 +64,11 @@ top_deps = base_deps + rtl_deps + tb_deps
 
 verilog_dv_tb(
     name = "{{name}}_tb",
-    ccf = ["coverage.ccf"],
     defines = tb_defines,
     extra_compile_args = tb_compile_args,
     extra_runfiles = tb_runfiles,
     extra_runtime_args = tb_runtime_args,
     shells = tb_shells,
-    verilog_config = {"{{name}}_top": "hw/dv/project_benches/{{name}}/tb/{{name}}_tb_cfg.sv"},
     warning_waivers = tb_warning_waivers,
     deps = top_deps,
     simulator = "VCS",

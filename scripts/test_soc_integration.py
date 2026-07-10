@@ -281,7 +281,8 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertIn('"//hw/dv/project_benches/soc/tb/testbench:hdl"',tb_build)
       self.assertIn('"//hw/dv/project_benches/soc/tb/tests:tests"',tb_build)
       self.assertIn('top_deps = base_deps + rtl_deps + tb_deps',tb_build)
-      self.assertIn('verilog_config = {"soc_top": "hw/dv/project_benches/soc/tb/soc_tb_cfg.sv"}',tb_build)
+      self.assertNotIn("coverage.ccf",tb_build)
+      self.assertNotIn("soc_tb_cfg.sv",tb_build)
       self.assertIn('simulator = "VCS"',tb_build)
       self.assertIn('name = "pkg"',(tb / "parameters" / "BUILD").read_text(encoding="utf-8"))
       testbench_build = (tb / "testbench" / "BUILD").read_text(encoding="utf-8")
@@ -291,7 +292,8 @@ class SocIntegrationTest(unittest.TestCase):
       tests_build = (tb / "tests" / "BUILD").read_text(encoding="utf-8")
       self.assertIn('load(":demo_tests.bzl", "demo_test_configs")',tests_build)
       self.assertIn('name = "base"',tests_build)
-      self.assertIn('"//hw/dv/project_benches/soc/tb/testbench:tb_defines.svh"',tests_build)
+      self.assertNotIn('"//hw/dv/project_benches/soc/tb/testbench:tb_defines.svh"',tests_build)
+      self.assertIn("pragma uvmf custom in_flist_prepend begin",tests_build)
       self.assertIn('"+wdog=": "1000000"',tests_build)
       self.assertIn("demo_test_configs()",tests_build)
       self.assertIn('tb = "//hw/dv/project_benches/soc/tb:soc_tb"',tests_build)
@@ -318,6 +320,17 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertNotEqual(result.returncode,0)
       self.assertIn("Refusing -o/--overwrite on non-empty output",result.stderr+result.stdout)
       self.assertEqual(sentinel.read_text(encoding="utf-8"),"user content\n")
+
+  def test_unknown_target_profile_is_rejected(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      config = root / "soc.yaml"
+      config.write_text(BASE_YAML,encoding="utf-8")
+      result = self.run_generator(
+        config,root / "output","--target_profile=vcs_xcelium_typo"
+      )
+      self.assertNotEqual(result.returncode,0)
+      self.assertIn("Unknown target profile",result.stderr+result.stdout)
 
   def test_merge_preserves_custom_blocks_and_project_files(self):
     with tempfile.TemporaryDirectory() as tmp:
@@ -463,6 +476,9 @@ class SocIntegrationTest(unittest.TestCase):
       model = output / "verification_ip" / "environment_packages" / "soc_env_pkg" / "registers" / "soc_reg_model.sv"
       content = model.read_text(encoding="utf-8")
       self.assertIn('default_map = create_map("default_map"',content)
+      self.assertIn("ip_0_rm.configure(this);",content)
+      self.assertIn("ip_1_rm.configure(this);",content)
+      self.assertNotIn("add_block(",content)
       self.assertIn("default_map.add_submap(ip_0_rm.default_map, BASE_ADDR + 0 * IP_STRIDE);",content)
       self.assertIn("default_map.add_submap(ip_1_rm.default_map, BASE_ADDR + 1 * IP_STRIDE);",content)
 

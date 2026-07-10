@@ -47,6 +47,7 @@ import tempfile
 from optparse import OptionParser, SUPPRESS_HELP
 from fnmatch import fnmatch
 import shutil
+import atexit
 
 # Determine addition to sys.path automatically based on script location
 # This means user does not have to explicitly set PYTHONPATH in order for this
@@ -2179,6 +2180,9 @@ def run():
   uvmf_parser.parser.add_option("--no_archive_yaml",dest="no_archive_yaml",action="store_true",default=False,help="Disable YAML archive creation")
   uvmf_parser.parser.add_option("--check",dest="check_only",action="store_true",default=False,help="Validate YAML and report obsolete generated output without writing or deleting files")
   (options,args) = uvmf_parser.parser.parse_args()
+  options.target_profile = options.target_profile.lower().replace('-','_')
+  if options.target_profile not in ('vcs_xcelium_synopsys_vip','legacy'):
+    raise UserError("Unknown target profile '{0}'; expected vcs_xcelium_synopsys_vip or legacy".format(options.target_profile))
   if options.enable_pdb or options.debug:
     print("Python version info:\n"+sys.version)
   if options.enable_pdb == True:
@@ -2214,20 +2218,6 @@ def run():
   if len(configfiles) == 0:
     if not ((options.merge_source != None) and (options.merge_export_yaml)):
       raise UserError("No configuration YAML specified to parse, must provide at least one")
-  merge_intermediate_dir = None
-  if (options.merge_source or options.merge_import_yaml) and not options.merge_export_yaml and not options.merge_debug and not options.check_only:
-    requested_dest = os.path.abspath(os.path.normpath(options.dest_dir))
-    intermediate_parent = os.path.dirname(requested_dest)
-    if not os.path.isdir(intermediate_parent):
-      os.makedirs(intermediate_parent)
-    merge_intermediate_dir = tempfile.mkdtemp(prefix='.uvmf_merge_',dir=intermediate_parent)
-    options.dest_dir = merge_intermediate_dir
-    dataObj.dest_dir_override = merge_intermediate_dir
-  elif options.merge_source != None:
-    if os.path.abspath(os.path.normpath(options.dest_dir)) == os.path.abspath(os.path.normpath(options.merge_source)):
-      # Debug output must remain separate from the source being merged.
-      options.dest_dir = options.dest_dir + "_tmp"
-      dataObj.dest_dir_override = options.dest_dir
   for cfg in configfiles:
     dataObj.parseFile(cfg)
   dataObj.validate(options.target_profile)
@@ -2239,6 +2229,23 @@ def run():
     for name in options.gen_name:
       if not dataObj.generateSelectorExists(name):
         raise UserError("Requested component '{0}' undefined".format(name))
+  merge_intermediate_dir = None
+  merge_cleanup = None
+  if (options.merge_source or options.merge_import_yaml) and not options.merge_export_yaml and not options.merge_debug and not options.check_only:
+    requested_dest = os.path.abspath(os.path.normpath(options.dest_dir))
+    intermediate_parent = os.path.dirname(requested_dest)
+    if not os.path.isdir(intermediate_parent):
+      os.makedirs(intermediate_parent)
+    merge_intermediate_dir = tempfile.mkdtemp(prefix='.uvmf_merge_',dir=intermediate_parent)
+    merge_cleanup = lambda: shutil.rmtree(merge_intermediate_dir,ignore_errors=True)
+    atexit.register(merge_cleanup)
+    options.dest_dir = merge_intermediate_dir
+    dataObj.dest_dir_override = merge_intermediate_dir
+  elif options.merge_source != None:
+    if os.path.abspath(os.path.normpath(options.dest_dir)) == os.path.abspath(os.path.normpath(options.merge_source)):
+      # Debug output must remain separate from the source being merged.
+      options.dest_dir = options.dest_dir + "_tmp"
+      dataObj.dest_dir_override = options.dest_dir
   if options.check_only:
     findings = audit_output(options.dest_dir)
     if findings:
@@ -2299,6 +2306,7 @@ def run():
         raise UserError("Refusing to remove a directory not created as merge scratch space: {0}".format(options.dest_dir))
       try:
         shutil.rmtree(merge_intermediate_dir)
+        atexit.unregister(merge_cleanup)
       except:
         raise UserError("Unable to remove intermediate output directory {0}. Permissions issue?".format(merge_intermediate_dir))
     if not options.quiet:

@@ -177,9 +177,9 @@
 
 {% for sub_env in subEnvironments %}
 {% if sub_env.regModelPkg != None %}
-      {{sub_env.regBlockInstance}} = new("{{sub_env.regBlockInstance}}");
+      {{sub_env.regBlockInstance}} = {{sub_env.regBlockClass}}::type_id::create("{{sub_env.regBlockInstance}}");
+      {{sub_env.regBlockInstance}}.configure(this);
       {{sub_env.regBlockInstance}}.build();
-      add_block({{sub_env.regBlockInstance}});
 {% if sub_env.baseAddress != None %}
 {% if busMap != None %}
       {{busMap}}.add_submap({{sub_env.regBlockInstance}}.default_map, {{sub_env.baseAddress}});
@@ -197,7 +197,7 @@
 
     function void sample(uvm_reg_addr_t offset, bit is_read, uvm_reg_map  map);
       if(get_coverage(UVM_CVR_ADDR_MAP)) begin
-        if(map.get_name() == "{{busMap}}_cg") begin
+        if(map == {{busMap}}) begin
           {{busMap}}_cg.sample(offset, is_read);
         end
       end
