@@ -498,6 +498,10 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertIn("ip_0_rm.configure(this);",content)
       self.assertIn("ip_1_rm.configure(this);",content)
       self.assertNotIn("add_block(",content)
+      self.assertNotIn("//package",content)
+      self.assertNotIn("example_reg",content)
+      self.assertNotRegex(content,r"(?m)^\s*///+")
+      self.assertNotRegex(content,r"(?m)^\s*//\s*Function:")
       self.assertIn("default_map.add_submap(ip_0_rm.default_map, BASE_ADDR + 0 * IP_STRIDE);",content)
       self.assertIn("default_map.add_submap(ip_1_rm.default_map, BASE_ADDR + 1 * IP_STRIDE);",content)
 

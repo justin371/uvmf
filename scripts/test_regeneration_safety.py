@@ -14,7 +14,7 @@ sys.path.insert(0,str(REPO_ROOT / "templates" / "python"))
 sys.path.insert(0,str(REPO_ROOT / "templates" / "python" / "python3"))
 
 from uvmf_gen import BaseGeneratorClass, UserError
-from uvmf_yaml.regen import Merge
+from uvmf_yaml.regen import Merge, Parse
 
 
 class RegenerationSafetyTest(unittest.TestCase):
@@ -183,6 +183,22 @@ class RegenerationSafetyTest(unittest.TestCase):
 
       self.assertEqual(old_file.read_text(encoding="utf-8"),"original content\n")
       self.assertEqual(list(old_root.glob("*.uvmf_merge_tmp")),[])
+
+  def test_parser_accepts_legacy_multi_slash_pragma(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      source = Path(tmp) / "register_model.sv"
+      source.write_text(
+        "//// pragma uvmf custom additional_imports begin\n"
+        "import custom_pkg::*;\n"
+        "// pragma uvmf custom additional_imports end\n",
+        encoding="utf-8",
+      )
+      parser = Parse(root=tmp,quiet=True)
+      parser.parse_file(str(source))
+      self.assertEqual(
+        parser.data[str(source)]["additional_imports"]["content"],
+        "import custom_pkg::*;\n",
+      )
 
   def test_failed_directory_merge_keeps_all_original_files(self):
     with tempfile.TemporaryDirectory() as tmp:

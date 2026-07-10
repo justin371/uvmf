@@ -306,7 +306,7 @@ class Regen:
     try:
       with open(fname,'r') as fs:
         for lnum,line in enumerate(fs):
-          match = re.search(r"^\s*(\/{2}|#+) pragma uvmf custom (\w+) (begin|end)",line)
+          match = re.search(r"^\s*(\/{2,}|#+) pragma uvmf custom (\w+) (begin|end)",line)
           if match:
             # Found a pragma
             label_type = match.group(3)
