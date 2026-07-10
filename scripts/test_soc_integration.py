@@ -369,6 +369,12 @@ class SocIntegrationTest(unittest.TestCase):
       build.write_text("# outside custom block\n"+content,encoding="utf-8")
       project_file = output / "project_benches" / "soc" / "tb" / "user_owned.sv"
       project_file.write_text("module user_owned; endmodule\n",encoding="utf-8")
+      obsolete_file = output / "verification_ip" / "legacy.compile"
+      obsolete_file.parent.mkdir(parents=True,exist_ok=True)
+      obsolete_file.write_text("obsolete\n",encoding="utf-8")
+      obsolete_dir = output / "project_benches" / "soc" / "sim"
+      obsolete_dir.mkdir()
+      (obsolete_dir / "old.sv").write_text("obsolete\n",encoding="utf-8")
 
       merged = self.run_generator(
         config,output,"-g","bench:soc","--merge_source="+str(output)
@@ -377,8 +383,12 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertEqual(merged.returncode,0,merged.stderr)
       self.assertIn("//hw/dv/custom:pkg",build.read_text(encoding="utf-8"))
       self.assertEqual(project_file.read_text(encoding="utf-8"),"module user_owned; endmodule\n")
+      self.assertFalse(obsolete_file.exists())
+      self.assertFalse(obsolete_dir.exists())
       backup = Path(str(output)+"_bak_0")
       self.assertTrue(backup.is_dir())
+      self.assertTrue((backup / "verification_ip" / "legacy.compile").is_file())
+      self.assertTrue((backup / "project_benches" / "soc" / "sim" / "old.sv").is_file())
       backup_build = backup / "project_benches" / "soc" / "tb" / "BUILD"
       self.assertIn("# outside custom block",backup_build.read_text(encoding="utf-8"))
 

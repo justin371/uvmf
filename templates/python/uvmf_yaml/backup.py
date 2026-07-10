@@ -1,7 +1,4 @@
-import sys
 import os
-import time
-import re
 from uvmf_gen import UserError
 from shutil import copytree
 

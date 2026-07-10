@@ -2311,6 +2311,10 @@ def run():
     else:
       merge.load_data(parse.data)
     merge.traverse_dir(options.dest_dir)
+    cleanup_components = list(dataObj.benchDict.values()) or list(dataObj.environmentDict.values()) or list(dataObj.interfaceDict.values())
+    for component in cleanup_components:
+      component.root = old_root
+      component.cleanupApprovedOutputs()
     if (not options.merge_debug):
       # Remove the intermediate directory unless asked otherwise
       if not options.quiet:
