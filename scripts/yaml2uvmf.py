@@ -2207,6 +2207,13 @@ def run():
     raise UserError("No configurations or config file specified as input. Must provide one or both")
   if (options.merge_source != None) and (options.merge_import_yaml != None):
     raise UserError("--merge_source and --merge_import_yaml options are mutually exclusive")
+  if options.merge_source and not (options.merge_debug or options.merge_export_yaml):
+    destination = os.path.abspath(os.path.normpath(options.dest_dir))
+    merge_source = os.path.abspath(os.path.normpath(options.merge_source))
+    if destination == os.path.abspath("./uvmf_template_output"):
+      options.dest_dir = options.merge_source
+    elif destination != merge_source:
+      raise UserError("-d/--dest_dir must match --merge_source for an in-place merge")
   if options.overwrite and not (options.merge_source or options.merge_import_yaml):
     destination = os.path.abspath(os.path.normpath(options.dest_dir))
     if os.path.isdir(destination) and any(os.scandir(destination)):

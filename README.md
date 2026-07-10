@@ -172,3 +172,17 @@ complete DV source tree:
 ```bash
 python3 "$UVMF_HOME/scripts/run_verible_lint.py" "$PROJ_DIR/hw/dv"
 ```
+
+## Continuous integration
+
+GitHub Actions runs `Smoke checks` for every pull request targeting `main`.
+Same-repository branches also run `Red Hat Bazel` on a self-hosted runner with
+the `self-hosted`, `linux`, `x64`, and `redhat` labels. The Red Hat runner must
+run Actions Runner 2.329.0 or newer and provide Python 3, Bazel, Git, SSH, and
+non-interactive SSH access to the `rules_verilog` repository configured in
+`WORKSPACE`.
+
+Protect `main` with a GitHub ruleset that requires a pull request and the
+`Smoke checks` and `Red Hat Bazel` status checks. Also require the branch to be
+up to date and block force pushes. Fork pull requests intentionally do not run
+on the self-hosted runner.

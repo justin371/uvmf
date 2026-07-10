@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - run: python3 scripts/run_smoke_checks.py
+
+  redhat:
+    name: Red Hat Bazel
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: [self-hosted, linux, x64, redhat]
+    timeout-minutes: 30
+    env:
+      GIT_SSH_COMMAND: ssh -o BatchMode=yes -o ConnectTimeout=15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Verify runner
+        run: |
+          test -f /etc/redhat-release
+          cat /etc/redhat-release
+          python3 --version
+          bazel --version
+          ssh -V
+      - run: python3 scripts/run_smoke_checks.py
+      - run: bazel query //...

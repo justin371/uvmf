@@ -351,6 +351,37 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertNotEqual(result.returncode,0)
       self.assertIn("Unknown target profile",result.stderr+result.stdout)
 
+  def test_merge_rejects_a_different_destination(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      config = root / "soc.yaml"
+      source = root / "source"
+      config.write_text(BASE_YAML,encoding="utf-8")
+      source.mkdir()
+
+      result = self.run_generator(
+        config,root / "different","--merge_source="+str(source)
+      )
+
+      self.assertNotEqual(result.returncode,0)
+      self.assertIn("must match --merge_source",result.stderr+result.stdout)
+
+  def test_merge_defaults_destination_to_source(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      config = root / "soc.yaml"
+      source = root / "source"
+      config.write_text(BASE_YAML,encoding="utf-8")
+      self.assertEqual(self.run_generator(config,source,"-g","bench:soc").returncode,0)
+
+      result = subprocess.run(
+        [sys.executable,str(REPO_ROOT / "scripts" / "yaml2uvmf.py"),"-q","-g","bench:soc","--merge_source="+str(source),str(config)],
+        cwd=root,text=True,capture_output=True,check=False,
+      )
+
+      self.assertEqual(result.returncode,0,result.stderr)
+      self.assertTrue(Path(str(source)+"_bak_0").is_dir())
+
   def test_merge_preserves_custom_blocks_and_project_files(self):
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
