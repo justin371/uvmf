@@ -28,6 +28,8 @@ uvmf:
     bus:
       clock: clk
       reset: rst
+      transaction_vars:
+        - {name: data, type: bit, isrand: "False", iscompare: "True"}
   environments:
     ip:
       agents:
@@ -229,13 +231,17 @@ class SocIntegrationTest(unittest.TestCase):
       output = root / "output"
       config.write_text(BASE_YAML,encoding="utf-8")
       result = self.run_generator(
-        config,output,"-g","environment:ip","-g","environment:soc"
+        config,output,"-g","interface:bus","-g","environment:ip","-g","environment:soc"
       )
       self.assertEqual(result.returncode,0,result.stderr)
 
       ip_build = output / "verification_ip" / "environment_packages" / "ip_env_pkg" / "BUILD"
       soc_build = output / "verification_ip" / "environment_packages" / "soc_env_pkg" / "BUILD"
+      bus_build = output / "verification_ip" / "interface_packages" / "bus_pkg" / "BUILD"
       self.assertIn('name = "pkg"',ip_build.read_text(encoding="utf-8"))
+      bus_build_content = bus_build.read_text(encoding="utf-8")
+      self.assertIn('name = "pkg"',bus_build_content)
+      self.assertIn('"@vip_vcs_svt_pkg//:pkg"',bus_build_content)
       self.assertIn(
         '"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg"',
         ip_build.read_text(encoding="utf-8"),
@@ -252,6 +258,8 @@ class SocIntegrationTest(unittest.TestCase):
         soc_build.read_text(encoding="utf-8"),
       )
       self.assertIn("pragma uvmf custom deps_additional begin",soc_build.read_text(encoding="utf-8"))
+      for sv_file in output.rglob("*.sv"):
+        self.assertNotIn("import bus_pkg_hdl::*;",sv_file.read_text(encoding="utf-8"),str(sv_file))
 
   def test_bench_generates_minimal_bazel_builds(self):
     with tempfile.TemporaryDirectory() as tmp:

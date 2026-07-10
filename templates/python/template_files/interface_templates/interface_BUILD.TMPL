@@ -1,0 +1,24 @@
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/BUILD" %}
+{% extends "base_template.TMPL" %}
+
+{% block contents %}
+load("@rules_verilog//verilog:defs.bzl", "verilog_dv_library")
+#load("@draconian_uvm//:duvm.bzl", "duvm_test")
+
+package(default_visibility = ["//visibility:public"])
+
+verilog_dv_library(
+    name = "pkg",
+    srcs = glob([
+        "*.sv*",
+        "src/*.sv*",
+    ]),
+    in_flist = glob([
+        "*_pkg.sv",
+    ]),
+    deps = [
+        "@dv_common//cmn:pkg",
+        "@vip_vcs_svt_pkg//:pkg",
+    ],
+)
+{% endblock %}

@@ -29,7 +29,6 @@ package {{name}}_env_pkg;
 {% endfor %}
 {% for agent in agent_pkgs %}
   import {{agent}}_pkg::*;
-  import {{agent}}_pkg_hdl::*;
 {% endfor %}
 {% for sub_env in env_pkgs %}
   import {{sub_env}}_env_pkg::*;
