@@ -242,6 +242,14 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertLess(package.index(sequence_include),package.index("package_item_additional begin"))
       self.assertLess(package.index("package_item_additional end"),package.index(environment_include))
       self.assertLess(package.index(environment_include),package.index("package_item_after_environment begin"))
+      configuration = (
+        output / "verification_ip" / "environment_packages" /
+        "ip_env_pkg" / "src" / "ip_env_configuration.sv"
+      ).read_text(encoding="utf-8")
+      self.assertIn(
+        "class ip_env_configuration extends uvmf_environment_configuration_base;",
+        configuration,
+      )
 
   def test_environment_generates_minimal_bazel_build(self):
     with tempfile.TemporaryDirectory() as tmp:

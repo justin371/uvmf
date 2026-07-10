@@ -12,8 +12,7 @@
 {% endblock %}
 
 {% block contents %}
-class {{name}}_env_configuration {{macro.paramDeclare(paramDefs)|indent(13)}}
-extends uvmf_environment_configuration_base;
+class {{name}}_env_configuration{% if paramDefs|length > 0 %} {{macro.paramDeclare(paramDefs)|indent(13)}}{% endif %} extends uvmf_environment_configuration_base;
 
 {{macro.objUtils([ name,'_env_configuration']|join(""),paramDefs)}}
 
