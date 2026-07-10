@@ -225,12 +225,38 @@ class RegenerationSafetyTest(unittest.TestCase):
         str(old_z.resolve()): {"lost": {"content": "user z\n","begin_line": 2,"end_line": 4}},
       }
 
-      with self.assertRaises(UserError):
+      with self.assertRaises(UserError) as error:
         merge.traverse_dir(str(new_root))
 
+      self.assertIsNone(error.exception.__context__)
+      self.assertIn("new output does not contain this custom block",str(error.exception))
       self.assertTrue(old_a.read_text(encoding="utf-8").startswith("old a\n"))
       self.assertTrue(old_z.read_text(encoding="utf-8").startswith("old z\n"))
       self.assertEqual(list(old_root.glob("*.uvmf_merge_tmp")),[])
+
+  def test_skip_missing_block_applies_new_file(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      old_root = root / "old"
+      new_root = root / "new"
+      old_root.mkdir()
+      new_root.mkdir()
+      old_file = old_root / "hdl_top.sv"
+      new_file = new_root / "hdl_top.sv"
+      old_file.write_text("old\n// pragma uvmf custom removed begin\nuser code\n// pragma uvmf custom removed end\n",encoding="utf-8")
+      new_file.write_text("new\n",encoding="utf-8")
+
+      merge = Merge(
+        outdir=str(old_root),skip_missing_blocks=True,
+        new_root=str(new_root),old_root=str(old_root),quiet=True,
+      )
+      merge.rd = {
+        str(old_file.resolve()): {"removed": {"content": "user code\n","begin_line": 2,"end_line": 4}},
+      }
+      merge.traverse_dir(str(new_root))
+
+      self.assertEqual(old_file.read_text(encoding="utf-8"),"new\n")
+      self.assertEqual(merge.missing_blocks,{str(old_file.resolve()): ["removed"]})
 
 
 if __name__ == "__main__":

@@ -144,9 +144,7 @@ class Merge(Base):
     # Do this by looping through all of the labels in the data structue for the given file
     # and look for the 'block_used' entry.  If that is there, all is good. Otherwise, problem.
     for l in self.rd[self.old_fname]:
-      try:
-        used = self.rd[self.old_fname][l]['block_used']
-      except KeyError:
+      if not self.rd[self.old_fname][l].get('block_used',False):
         if self.skip_missing_blocks == True:
           if self.old_fname not in self.missing_blocks:
             self.missing_blocks[self.old_fname] = [ l ]
@@ -155,7 +153,7 @@ class Merge(Base):
         else:
           if os.path.exists(self.tmp_fname):
             os.remove(self.tmp_fname)
-          raise UserError('Potential loss of hand edits:\n  File: {0}\n  Label: "{1}"\nUse --merge_skip_missing_blocks to proceed and produce list of labels at end'.format(self.old_fname,l))
+          raise UserError('Potential loss of hand edits:\n  File: {0}\n  Label: "{1}"\nThe new output does not contain this custom block. Restore the generating YAML component, or use --merge_skip_missing_blocks after reviewing the backup.'.format(self.old_fname,l))
     os.chmod(self.tmp_fname,self.old_mode)
     self.pending_replacements.append((self.tmp_fname,self.old_fname))
 
