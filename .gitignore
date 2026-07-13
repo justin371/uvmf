@@ -6,16 +6,4 @@ docs/
 base_examples/
 vip_examples/
 
-# Generated bench outputs that are often not checked in for local-only flows.
-uvmf_template_output/project_benches/*/sim/
-uvmf_template_output/project_benches/*/rtl/
-uvmf_template_output/project_benches/*/docs/
 uvmf_template_output/
-uvmf_template_output/project_benches/**/*.F
-uvmf_template_output/project_benches/**/*.vcompile
-uvmf_template_output/project_benches/**/*.vinfo
-uvmf_template_output/project_benches/**/*.compile
-uvmf_template_output/project_benches/**/*.f
-uvmf_template_output/**/compile.do
-uvmf_template_output/**/.project
-uvmf_template_output/**/.svproject

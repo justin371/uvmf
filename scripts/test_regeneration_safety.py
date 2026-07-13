@@ -99,15 +99,6 @@ class RegenerationSafetyTest(unittest.TestCase):
     generator = self.make_generator(Path.cwd())
     generator.options = SimpleNamespace(
       quiet=True,
-      target_profile="vcs_xcelium_synopsys_vip",
-      minimal_output=False,
-      skip_bench_sim=False,
-      skip_bench_rtl=False,
-      skip_bench_docs=False,
-      skip_legacy_filelists=False,
-      skip_questa_scripts=False,
-      skip_ide_metadata=False,
-      with_bench_sequences=False,
     )
     generator.gen_type = "environment"
 

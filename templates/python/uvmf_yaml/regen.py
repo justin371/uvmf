@@ -1,11 +1,10 @@
 import os
 import re
 from uvmf_gen import UserError
-import yaml
 import pprint
 import stat
 import tempfile
-from uvmf_yaml import dumper, RegenValidator
+from uvmf_yaml import RegenValidator
 
 from voluptuous import MultipleInvalid
 from voluptuous.humanize import humanize_error
@@ -33,23 +32,9 @@ class Merge(Base):
     self.skip_missing_blocks = skip_missing_blocks
     self.quiet = quiet
     self.new_directories = []
-    self.yaml_imported = False
     self.block_copied = False
     self.pending_copies = []
     self.pending_replacements = []
-
-  def load_yaml(self,fname):
-    self.yaml_imported = True
-    try:
-      fs = open(fname)
-    except IOError:
-      raise UserError("Unable to open config file {0}".format(fname))
-    d = yaml.safe_load(fs)
-    fs.close()
-    try:
-      self.load_data(d['uvmf']['regen_data'])
-    except:
-      raise UserError("Contents of {0} does not contain valid UVMF regeneration information".format(fname))
 
   def load_data(self,data):
     try:
@@ -73,10 +58,7 @@ class Merge(Base):
       ## Function returns False if we do not need to process this file any further
       return False
     elif not (self.old_fname in self.rd):
-      ## File was found to exist in original source but was not parsed. This is a fatal error (shouldn't happen) unless we're doing a YAML import in which case we can ignore.
-      if not self.yaml_imported:
-        raise UserError("Internal error - Source file {0} was not properly parsed for named blocks".format(self.old_fname))
-      return False
+      raise UserError("Internal error - Source file {0} was not properly parsed for named blocks".format(self.old_fname))
     else:
       ## Matched old_fname up with something in the data structure, which means we have a match between old and new.
       ## Write beside the original and replace it only after a complete merge.
@@ -202,35 +184,14 @@ class Merge(Base):
 
 class Parse(Base):
 
-  def __init__(self,root,quiet=False,cleanup=False):
+  def __init__(self,root,quiet=False):
     self.data = {}
     self.root = root
     self.block_count = 0
     self.quiet = quiet
     self.regen = Regen()
-    self.cleanup = cleanup
     self.new_dirs = []
     self.old_dirs = []
-
-  def str_presenter(self, dumper, data):
-    if len(data.splitlines()) > 1:
-      return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-
-  def dump(self,fname):
-    # Clean up data so it'll represent in YAML properly. Remove whitespace at end of lines
-    # and all but the final newline. Only do this if we're dumping YAML (cleanup==True)
-    for f,labels in self.data.items():
-      for label,ldata in labels.items():
-        c = ldata['content']
-        if (self.cleanup):
-          c = re.sub(r"\s+$", "", c)
-          c = re.sub(r"\s+\n", "\n", c)
-          c = re.sub(r"\n$","", c)
-        self.data[f][label]['content'] = c
-    d = {'uvmf': {'regen_data': self.data}}
-    yaml.add_representer(str, self.str_presenter)
-    dumper.YAMLGenerator(d, fname)
 
   def parse_file(self,fname):
     self.regen.parse_file(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside)

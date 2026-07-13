@@ -1,5 +1,4 @@
 load("@rules_verilog//verilog:defs.bzl", "verilog_dv_library")
-#load("@draconian_uvm//:duvm.bzl", "duvm_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -10,7 +9,4 @@ verilog_dv_library(
         "src/*.sv*",
     ]),
     in_flist = glob(["*_pkg_hdl.sv"]) + glob(["*_pkg.sv"]),
-    deps = [
-    ],
 )
-

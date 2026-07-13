@@ -349,9 +349,9 @@ class InterfaceDumper:
 import yaml
 
 BOOLEAN_KEYS = {
-  'catapult_ready','elaborate_bfm_parameters','enable_functional_coverage',
+  'elaborate_bfm_parameters','enable_functional_coverage',
   'existing_library_component','extdef','flat_output','gen_inbound_streaming_driver',
-  'infact_enabled','iscompare','isrand','mtlb_ready','use_adapter','use_bcr',
+  'iscompare','isrand','use_adapter',
   'use_coemu_clk_rst_gen','use_dpi_link','use_explicit_prediction',
   'use_register_model','veloce_ready','vip_agent',
 }

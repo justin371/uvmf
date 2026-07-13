@@ -163,36 +163,6 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     // pragma uvmf custom do_copy end
   endfunction
 
-{% if legacy_profile %}
-  // ****************************************************************************
-  // FUNCTION: add_to_wave()
-  // This function is used to display variables in this class in the waveform
-  // viewer.  The start_time and end_time variables must be set before this
-  // function is called.  If the start_time and end_time variables are not set
-  // the transaction will be hidden at 0ns on the waveform display.
-
-  virtual function void add_to_wave(int transaction_viewing_stream_h);
-    `ifdef QUESTA
-    if (transaction_view_h == 0) begin
-      transaction_view_h = $begin_transaction(transaction_viewing_stream_h,"{{name}}_transaction",start_time);
-    end
-    super.add_to_wave(transaction_view_h);
-    // pragma uvmf custom add_to_wave begin
-    // UVMF_CHANGE_ME : Color can be applied to transaction entries based on content, example below
-    // case()
-    //   1 : $add_color(transaction_view_h,"red");
-    //   default : $add_color(transaction_view_h,"grey");
-    // endcase
-    // UVMF_CHANGE_ME : Eliminate transaction variables not wanted in transaction viewing in the waveform viewer
-{% for txn in transVars %}    $add_attribute(transaction_view_h,{{txn.name}},"{{txn.name}}");
-{% endfor %}
-    // pragma uvmf custom add_to_wave end
-    $end_transaction(transaction_view_h,end_time);
-    $free_transaction(transaction_view_h);
-    `endif // QUESTA
-  endfunction
-{% endif %}
-
 endclass
 
 // pragma uvmf custom external begin
