@@ -50,15 +50,6 @@ def parse_args():
   return parser.parse_args()
 
 
-def find_executable(command):
-  command_path = Path(command).expanduser()
-  if command_path.parent != Path("."):
-    if command_path.is_file():
-      return str(command_path.resolve())
-    return None
-  return shutil.which(command)
-
-
 def is_repo_excluded(path,repo_root):
   try:
     relative = path.relative_to(repo_root).as_posix()
@@ -94,7 +85,7 @@ def main():
   args = parse_args()
   repo_root = Path(__file__).resolve().parent.parent
   rules_config = repo_root / ".rules.verible_lint"
-  executable = find_executable(args.verible_lint)
+  executable = shutil.which(str(Path(args.verible_lint).expanduser()))
 
   scan_paths = [Path(path).expanduser().resolve() for path in args.paths]
   if not scan_paths:

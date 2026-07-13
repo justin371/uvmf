@@ -2,10 +2,10 @@ This is the UVMF 2023.4_2 which is used to generate verification IPs and environ
 
 ## Red Hat Linux workflow
 
-The default generator target is `vcs_xcelium_synopsys_vip`. It omits Questa,
-legacy VIP configurator output, generated Makefiles, IDE metadata, legacy file lists, and unused bench output. Generated
-source defaults to `.sv`; only header-like files such as macros and typedefs remain `.svh`. Use
-`legacy` only when the complete upstream-compatible output is required.
+Generator output targets VCS, Xcelium, and Synopsys VIP. It omits Questa,
+legacy VIP configurator output, generated Makefiles, IDE metadata, legacy file
+lists, and unused bench output. Generated source defaults to `.sv`; only
+header-like files such as macros and typedefs remain `.svh`.
 
 ```bash
 python3 scripts/yaml2uvmf.py <yaml-files>
@@ -33,9 +33,6 @@ uvmf:
           type: svt_apb
           count: 6
 ```
-
-`vip_environments` and `vip_subenvs` are compatibility input for the old
-Questa VIP Configurator only and require `--target_profile=legacy`.
 
 ## Register model hierarchy
 
@@ -138,8 +135,6 @@ regeneration.
 Run the regeneration safety regression with:
 
 ```bash
-python3 scripts/test_regeneration_safety.py
-python3 scripts/test_soc_integration.py
 python3 scripts/run_smoke_checks.py
 ```
 

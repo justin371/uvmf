@@ -10,9 +10,6 @@
 
 // CONTAINS:
 //     -<test_top>
-{% if use_bench_sequences %}
-//     -<example_derived_test>
-{% endif %}
 
 //----------------------------------------------------------------------
 {% endblock %}
@@ -25,9 +22,6 @@ package {{name}}_tests_pkg;
    import uvmf_base_pkg::*;
    import {{name}}_parameters_pkg::*;
    import {{env_name}}_env_pkg::*;
-{% if use_bench_sequences %}
-   import {{name}}_sequences_pkg::*;
-{% endif %}
 {% for ext_import in external_imports %}
    import {{ext_import}}::*;
 {% endfor %}
@@ -43,13 +37,6 @@ package {{name}}_tests_pkg;
   // pragma uvmf custom package_imports_additional end
 
    `include "{{src_dir}}test_top.sv"
-{% if use_bench_sequences %}
-   `include "{{src_dir}}register_test.sv"
-   `include "{{src_dir}}example_derived_test.sv"
-{% endif %}
-{% if inFactEnabled %}
-   `include "{{src_dir}}infact_test_base.sv"
-{% endif %}
 
   // pragma uvmf custom package_item_additional begin
   // UVMF_CHANGE_ME : When adding new tests to the src directory

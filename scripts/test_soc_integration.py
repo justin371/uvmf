@@ -353,17 +353,6 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertIn("Refusing -o/--overwrite on non-empty output",result.stderr+result.stdout)
       self.assertEqual(sentinel.read_text(encoding="utf-8"),"user content\n")
 
-  def test_unknown_target_profile_is_rejected(self):
-    with tempfile.TemporaryDirectory() as tmp:
-      root = Path(tmp)
-      config = root / "soc.yaml"
-      config.write_text(BASE_YAML,encoding="utf-8")
-      result = self.run_generator(
-        config,root / "output","--target_profile=vcs_xcelium_typo"
-      )
-      self.assertNotEqual(result.returncode,0)
-      self.assertIn("Unknown target profile",result.stderr+result.stdout)
-
   def test_merge_rejects_a_different_destination(self):
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -613,7 +602,7 @@ class SocIntegrationTest(unittest.TestCase):
       with self.assertRaisesRegex(UserError,"requires register_model"):
         data.validate()
 
-  def test_legacy_qvip_yaml_keys_are_normalized_to_vip(self):
+  def test_legacy_qvip_yaml_is_rejected(self):
     with tempfile.TemporaryDirectory() as tmp:
       config = Path(tmp) / "legacy.yaml"
       config.write_text(
@@ -636,7 +625,6 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertNotIn("qvip_subenvs",data.data["environments"]["soc"])
       with self.assertRaisesRegex(UserError,"Legacy VIP Configurator"):
         data.validate()
-      data.validate("legacy")
 
   def test_synopsys_vip_uses_regular_external_subenvironment(self):
     with tempfile.TemporaryDirectory() as tmp:

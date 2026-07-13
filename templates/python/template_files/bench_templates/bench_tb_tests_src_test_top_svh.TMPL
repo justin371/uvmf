@@ -18,20 +18,14 @@
 
 typedef {{env_name}}_env_configuration {{macro.paramUseNested(envParamDefs)|indent(8)}}{{env_name}}_env_configuration_t;
 typedef {{env_name}}_environment {{macro.paramUseNested(envParamDefs)|indent(8)}}{{env_name}}_environment_t;
-{% if not use_bench_sequences %}
 typedef {{env_name}}_env_sequence_base #(
                                         .CONFIG_T({{env_name}}_env_configuration_t),
                                         .ENV_T({{env_name}}_environment_t)
                                         ) {{env_name}}_env_sequence_base_t;
-{% endif %}
 
 class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration_t),
                                         .ENV_T({{env_name}}_environment_t),
-{% if use_bench_sequences %}
-                                        .TOP_LEVEL_SEQ_T({{name}}_bench_sequence_base));
-{% else %}
                                         .TOP_LEVEL_SEQ_T({{env_name}}_env_sequence_base_t));
-{% endif %}
 
   `uvm_component_utils( test_top )
 
@@ -162,7 +156,6 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
 {% endif %}
   endfunction
 
-{% if not use_bench_sequences %}
   // ****************************************************************************
   // TASK: run_phase()
   // Start the environment-level virtual sequence on the environment virtual
@@ -175,7 +168,6 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
     top_level_sequence.start(environment.vsqr);
     phase.drop_objection(this, "Objection dropped by test_top");
   endtask
-{% endif %}
 
 endclass
 

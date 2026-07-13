@@ -58,6 +58,7 @@ sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"
 
 from uvmf_yaml import  *
 import uvmf_gen
+from uvmf_yaml.obsolete import find_obsolete_outputs, remove_obsolete_outputs
 from uvmf_gen import (UVMFCommandLineParser,PassThroughOptionParser,UserError,InterfaceClass,EnvironmentClass,BenchClass)
 from voluptuous import Invalid, MultipleInvalid
 from voluptuous.humanize import humanize_error
@@ -100,26 +101,16 @@ def audit_output(root):
   root = os.path.abspath(os.path.normpath(root))
   if not os.path.isdir(root):
     return []
-  helper = uvmf_gen.BaseGeneratorClass('audit','audit')
-  findings = []
-  obsolete_suffixes = ('.F','.vcompile','.vinfo','.compile','.f')
-  obsolete_names = ('compile.do','.project','.svproject')
+  files,dirs = find_obsolete_outputs(root)
+  findings = [os.path.relpath(path,root).replace('\\','/') for path in files]
+  findings.extend(os.path.relpath(path,root).replace('\\','/')+'/' for path in dirs)
+  obsolete_dirs = set(dirs)
   for dirpath,dirnames,filenames in os.walk(root):
-    rel_dir = os.path.relpath(dirpath,root).replace('\\','/')
-    parts = rel_dir.split('/')
-    if len(parts) >= 3 and parts[0] == 'project_benches':
-      if parts[2] in ('sim','rtl','docs') or parts[2:4] == ['tb','sequences']:
-        findings.append(rel_dir+'/')
-        dirnames[:] = []
-        continue
+    dirnames[:] = [name for name in dirnames if os.path.abspath(os.path.join(dirpath,name)) not in obsolete_dirs]
     for filename in filenames:
       path = os.path.join(dirpath,filename)
       rel = os.path.relpath(path,root).replace('\\','/')
-      if filename.endswith(obsolete_suffixes) or filename in obsolete_names:
-        findings.append(rel)
-      elif helper.isApprovedObsoleteGeneratedMakefile(rel) or helper.isApprovedObsoleteGeneratedSvh(path):
-        findings.append(rel)
-      elif filename.endswith(('.yaml','.yml')):
+      if filename.endswith(('.yaml','.yml')):
         try:
           with open(path,'r',encoding='utf-8') as handle:
             if re.search(r'^\s+qvip_[A-Za-z0-9_]+\s*:',handle.read(),re.MULTILINE):
@@ -214,9 +205,9 @@ class Node:
 
 class DataClass:
   BOOLEAN_KEYS = {
-    'catapult_ready','elaborate_bfm_parameters','enable_functional_coverage',
+    'elaborate_bfm_parameters','enable_functional_coverage',
     'existing_library_component','extdef','flat_output','gen_inbound_streaming_driver',
-    'infact_enabled','iscompare','isrand','mtlb_ready','use_adapter','use_bcr',
+    'iscompare','isrand','use_adapter',
     'use_coemu_clk_rst_gen','use_dpi_link','use_explicit_prediction',
     'use_register_model','veloce_ready','vip_agent',
   }
@@ -337,22 +328,19 @@ class DataClass:
           self.data_sources[elem][name] = fname
 
   ## Validate various data structures against the associated schema
-  def validate(self,target_profile='vcs_xcelium_synopsys_vip'):
+  def validate(self):
     self.expandSubenvironmentCounts()
-    if target_profile.lower().replace('-','_') != 'legacy':
-      legacy_envs = list(self.data['vip_environments'])
-      legacy_users = []
-      for env_name,env in self.data['environments'].items():
-        if any(env.get(key) for key in ('vip_subenvs','vip_memory_agents','vip_connections')):
-          legacy_users.append(env_name)
-      if legacy_envs or legacy_users:
-        raise UserError(
-          "Legacy VIP Configurator data is unsupported by target profile {0}. "
-          "Model Synopsys VIP as environments/subenvs with existing_library_component, "
-          "or use --target_profile=legacy. Definitions: {1}; users: {2}".format(
-            target_profile,legacy_envs,legacy_users
-          )
-        )
+    legacy_envs = list(self.data['vip_environments'])
+    legacy_users = []
+    for env_name,env in self.data['environments'].items():
+      if any(env.get(key) for key in ('vip_subenvs','vip_memory_agents','vip_connections')):
+        legacy_users.append(env_name)
+    if legacy_envs or legacy_users:
+      raise UserError(
+        "Legacy VIP Configurator data is unsupported. "
+        "Model Synopsys VIP as environments/subenvs with existing_library_component. "
+        "Definitions: {0}; users: {1}".format(legacy_envs,legacy_users)
+      )
     self.validators = {
       'interfaces':InterfaceValidator(),
       'util_components':ComponentValidator(),
@@ -1290,11 +1278,7 @@ class DataClass:
         except KeyError:
           parameters = []
           pass
-        try:
-          ac_mtlb_ready = definition['mtlb_ready']==True
-        except KeyError:
-          ac_mtlb_ready = False
-        env.defineAnalysisComponent(ac_type_type,ac_type,exports,ports,qvip_exports,parameters,mtlbReady=ac_mtlb_ready)
+        env.defineAnalysisComponent(ac_type_type,ac_type,exports,ports,qvip_exports,parameters)
         defined_ac_items = defined_ac_items + [ac_type]
         if ac_type not in self.used_ac_items:
           self.used_ac_items = self.used_ac_items + [ac_type]
@@ -1618,10 +1602,6 @@ class DataClass:
       for f in cpp_files:
         env.addUVMCfile(f)
     except KeyError: pass
-    try:
-      env.mtlbReady = (struct['mtlb_ready']=="True")
-    except KeyError:
-      pass
     existing_component = False
     try:
       if not build_existing:
@@ -1692,9 +1672,6 @@ class DataClass:
     except KeyError:
       ben.activePassiveDefault = 'ACTIVE'
       pass
-    ## Check for inFact ready flag
-    ben.inFactEnabled = False
-
     ## Use co-emulation clk/rst generator
     try:
       ben.useCoEmuClkRstGen = (struct['use_coemu_clk_rst_gen']=='True')
@@ -1854,12 +1831,11 @@ class DataClass:
           aParams = ifp_dict[bfm_name]
         else:
           aParams = {}
-        infact_ready = False
         try:
           port_list = agentDef['ports']
         except KeyError:
           port_list = []
-        ben.addBfm(name=bfm_name,ifPkg=a['bfm_type'],clk=agentDef['clock'],rst=agentDef['reset'],activity=active_passive,parametersDict=aParams,sub_env_path=debugpath,agentInstName=a['bfm_name'],vipLibEnvVariable=a['lib_env_var_name'],initResp=a['initiator_responder'],inFactReady=infact_ready,portList=port_list)
+        ben.addBfm(name=bfm_name,ifPkg=a['bfm_type'],clk=agentDef['clock'],rst=agentDef['reset'],activity=active_passive,parametersDict=aParams,sub_env_path=debugpath,agentInstName=a['bfm_name'],vipLibEnvVariable=a['lib_env_var_name'],initResp=a['initiator_responder'],portList=port_list)
     ## Check that all keys in the ifp_dict and ap_dict match something in the valid_bfm_names list that
     ## was based on the actual UVM component hierarchy elements. If not, it probably means we have a typo somewhere in the bench YAML
     for k in ifp_dict.keys():
@@ -1919,14 +1895,6 @@ class DataClass:
       for t in struct['additional_tops']:
         ben.addTopLevel(t)
     except KeyError: pass
-    try:
-      ben.mtlbReady = (struct['mtlb_ready']=="True")
-    except KeyError:
-      pass
-    try:
-      ben.useBCR = (struct['use_bcr']=="True")
-    except KeyError:
-      ben.useBCR = False
     existing_component = False
     try:
       if not build_existing:
@@ -2095,11 +2063,6 @@ class DataClass:
           intf.addDPIExport(exp)
       except KeyError: pass
     except KeyError: pass
-    intf.inFactReady = False
-    try:
-      intf.mtlbReady = (struct['mtlb_ready']=="True")
-    except KeyError:
-      pass
     try:
       intf.veloceReady = (struct['veloce_ready'] == "True")
     except KeyError:
@@ -2183,19 +2146,12 @@ def run():
   uvmf_parser.parser.add_option("--pdb",dest="enable_pdb",action="store_true",help=SUPPRESS_HELP,default=False)
   uvmf_parser.parser.add_option("-m","--merge_source",dest="merge_source",action="store",help="Enable auto-merge flow, pulling from the specified source directory")
   uvmf_parser.parser.add_option("-s","--merge_skip_missing_blocks",dest="merge_skip_missing",action="store_true",help="Continue merge if unable to locate a custom block that was defined in old source, producing a report at the end. Default behavior is to raise an error",default=False)
-  uvmf_parser.parser.add_option("--merge_export_yaml",dest="merge_export_yaml",action="store",help=SUPPRESS_HELP,default=None)
-  uvmf_parser.parser.add_option("--merge_import_yaml",dest="merge_import_yaml",action="store",help=SUPPRESS_HELP,default=None)
-  uvmf_parser.parser.add_option("--merge_import_yaml_output",dest="merge_import_yaml_output",action="store",help=SUPPRESS_HELP,default="uvmf_template_merged")
-  uvmf_parser.parser.add_option("--merge_no_backup",dest="merge_no_backup",action="store_true",help="Deprecated compatibility option; backups remain mandatory",default=False)
   uvmf_parser.parser.add_option("--merge_debug",dest="merge_debug",action="store_true",help="Provide intermediate unmerged output directory for debug purposes. Debug directory can be specified by --dest_dir switch.",default=False)
   uvmf_parser.parser.add_option("--merge_verbose",dest="merge_verbose",action="store_true",help="Output more verbose messages during the merge operation for debug purposes.",default=False)
   uvmf_parser.parser.add_option("--build_existing_components",dest="build_existing_components",action="store_true",help="Ignore \"existing_library_component\" flags and attempt to build anyway.",default=False)
   uvmf_parser.parser.add_option("--no_archive_yaml",dest="no_archive_yaml",action="store_true",default=False,help="Disable YAML archive creation")
   uvmf_parser.parser.add_option("--check",dest="check_only",action="store_true",default=False,help="Validate YAML and report obsolete generated output without writing or deleting files")
   (options,args) = uvmf_parser.parser.parse_args()
-  options.target_profile = options.target_profile.lower().replace('-','_')
-  if options.target_profile not in ('vcs_xcelium_synopsys_vip','legacy'):
-    raise UserError("Unknown target profile '{0}'; expected vcs_xcelium_synopsys_vip or legacy".format(options.target_profile))
   if options.enable_pdb or options.debug:
     print("Python version info:\n"+sys.version)
   if options.enable_pdb == True:
@@ -2205,16 +2161,14 @@ def run():
     sys.tracebacklimit = 0
   if (len(args) == 0) and (options.configfile == None) and (options.rel_configfile == None) and (options.merge_source == None):
     raise UserError("No configurations or config file specified as input. Must provide one or both")
-  if (options.merge_source != None) and (options.merge_import_yaml != None):
-    raise UserError("--merge_source and --merge_import_yaml options are mutually exclusive")
-  if options.merge_source and not (options.merge_debug or options.merge_export_yaml):
+  if options.merge_source and not options.merge_debug:
     destination = os.path.abspath(os.path.normpath(options.dest_dir))
     merge_source = os.path.abspath(os.path.normpath(options.merge_source))
     if destination == os.path.abspath("./uvmf_template_output"):
       options.dest_dir = options.merge_source
     elif destination != merge_source:
       raise UserError("-d/--dest_dir must match --merge_source for an in-place merge")
-  if options.overwrite and not (options.merge_source or options.merge_import_yaml):
+  if options.overwrite and not options.merge_source:
     destination = os.path.abspath(os.path.normpath(options.dest_dir))
     if os.path.isdir(destination) and any(os.scandir(destination)):
       raise UserError(
@@ -2236,11 +2190,10 @@ def run():
   except TypeError:
     pass
   if len(configfiles) == 0:
-    if not ((options.merge_source != None) and (options.merge_export_yaml)):
-      raise UserError("No configuration YAML specified to parse, must provide at least one")
+    raise UserError("No configuration YAML specified to parse, must provide at least one")
   for cfg in configfiles:
     dataObj.parseFile(cfg)
-  dataObj.validate(options.target_profile)
+  dataObj.validate()
   if 'elaborate_bfm_parameters' in dataObj.data['global'] and dataObj.data['global']['elaborate_bfm_parameters'] == 'True':
     for bench in dataObj.data['benches'].keys():
       dataObj.elaborateAgentParameters(options,bench)
@@ -2251,7 +2204,7 @@ def run():
         raise UserError("Requested component '{0}' undefined".format(name))
   merge_intermediate_dir = None
   merge_cleanup = None
-  if (options.merge_source or options.merge_import_yaml) and not options.merge_export_yaml and not options.merge_debug and not options.check_only:
+  if options.merge_source and not options.merge_debug and not options.check_only:
     requested_dest = os.path.abspath(os.path.normpath(options.dest_dir))
     intermediate_parent = os.path.dirname(requested_dest)
     if not os.path.isdir(intermediate_parent):
@@ -2273,55 +2226,24 @@ def run():
     if not options.quiet:
       print("YAML validation and output audit passed")
     return
-  dataObj.buildElements(options.gen_name,verify=options.merge_export_yaml==None,build_existing=options.build_existing_components,archive_yaml=(not options.no_archive_yaml))
-  if options.merge_source or options.merge_import_yaml:
-    if not options.merge_import_yaml:
-      if not options.merge_export_yaml:
-        if options.merge_no_backup and not options.quiet:
-          print("WARNING: --merge_no_backup is ignored by the repository safety policy")
-        ## Create a backup of the original source.
-        backup_copy = backup(options.merge_source)
-        if not options.quiet:
-          print("Backed up original source to {0}".format(backup_copy))
-      if not options.quiet:
-        print("Parsing customizations from {0} ...".format(options.merge_source))
-      # Parse old source for pragma blocks. Resulting object will contain data structure of this activity
-      parse = Parse(quiet=options.quiet,cleanup=options.merge_import_yaml,root=os.path.abspath(os.path.normpath(options.merge_source)))
-      # Need to first produce a list of directories in the new output. Only validate files in the merge source
-      # that are in the equivalent directories (to do otherwise would be a waste of time)
-      parse.collect_directories(new_root_dir=options.dest_dir,old_root_dir=options.merge_source)
-      # Traverse through the merged source directory structure. This will only collect data on
-      # directories that were just re-generated, nothing outside of that area.
-      parse.traverse_dir(options.merge_source)
-      old_root = parse.root
-      if options.merge_export_yaml:
-        if not options.quiet:
-          print("  Exporting merge data to {0}".format(options.merge_export_yaml))
-          parse.dump(options.merge_export_yaml)
-          sys.exit(0)
-      else:
-        if not options.quiet:
-          print("Merging custom code in {0} with new output ...".format(options.merge_source))
-    else:
-      if not options.quiet:
-        print("Pulling in customizations from imported YAML file {0}".format(options.merge_import_yaml))
-      old_root = os.path.abspath(os.path.normpath(options.merge_import_yaml_output))
+  dataObj.buildElements(options.gen_name,build_existing=options.build_existing_components,archive_yaml=(not options.no_archive_yaml))
+  if options.merge_source:
+    backup_copy = backup(options.merge_source)
+    if not options.quiet:
+      print("Backed up original source to {0}".format(backup_copy))
+      print("Parsing customizations from {0} ...".format(options.merge_source))
+    parse = Parse(quiet=options.quiet,root=os.path.abspath(os.path.normpath(options.merge_source)))
+    parse.collect_directories(new_root_dir=options.dest_dir,old_root_dir=options.merge_source)
+    parse.traverse_dir(options.merge_source)
+    old_root = parse.root
+    if not options.quiet:
+      print("Merging custom code in {0} with new output ...".format(options.merge_source))
     merge = Merge(outdir=old_root,skip_missing_blocks=options.merge_skip_missing,new_root=os.path.abspath(os.path.normpath(options.dest_dir)),old_root=old_root,quiet=options.quiet)
-    if options.merge_import_yaml:
-      merge.load_yaml(options.merge_import_yaml)
-      # If we're importing the data, copy newly generated source over to desired final location. This will be what we treat as the "original" output directory
-      from shutil import copytree
-      try:
-        copytree(options.dest_dir,options.merge_import_yaml_output)
-      except:
-        pass
-    else:
-      merge.load_data(parse.data)
+    merge.load_data(parse.data)
     merge.traverse_dir(options.dest_dir)
     cleanup_components = list(dataObj.benchDict.values()) or list(dataObj.environmentDict.values()) or list(dataObj.interfaceDict.values())
-    for component in cleanup_components:
-      component.root = old_root
-      component.cleanupApprovedOutputs()
+    bench_roots = [os.path.join(old_root,component.bench_location,component.name) for component in cleanup_components if component.gen_type == 'bench']
+    remove_obsolete_outputs(old_root,bench_roots,options.quiet)
     if (not options.merge_debug):
       # Remove the intermediate directory unless asked otherwise
       if not options.quiet:

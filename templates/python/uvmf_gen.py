@@ -54,7 +54,6 @@ __version__ = version
 
 SVH_KEEP_SUFFIXES = (
   '_macros.svh',
-  '_macros_mtlb.svh',
   '_typedefs.svh',
   '_typedefs_hdl.svh',
   '_env_typedefs.svh',
@@ -231,15 +230,6 @@ class UVMFCommandLineParser:
     self.parser.add_option("-o","--overwrite",dest="overwrite",action="store_true",help="Overwrite existing output files (default is to skip)",default=False)
     self.parser.add_option("-b","--debug",dest="debug",action="store_true",help=SUPPRESS_HELP,default=False)
     self.parser.add_option("-y","--yaml",dest="yaml",action="store_true",help="Dump YAML file instead of generate code",default=False)
-    self.parser.add_option("--target_profile",dest="target_profile",action="store",type="string",help="Apply output policy for a target DV profile. Default: vcs_xcelium_synopsys_vip. Use legacy for upstream-style full output.",default="vcs_xcelium_synopsys_vip")
-    self.parser.add_option("--minimal_output",dest="minimal_output",action="store_true",help="Skip local bench simulation, RTL stub, docs, and legacy filelist metadata outputs",default=False)
-    self.parser.add_option("--skip_bench_sim",dest="skip_bench_sim",action="store_true",help="Skip generation of project_benches/<bench>/sim outputs",default=False)
-    self.parser.add_option("--skip_bench_rtl",dest="skip_bench_rtl",action="store_true",help="Skip generation of project_benches/<bench>/rtl DUT stub outputs",default=False)
-    self.parser.add_option("--skip_bench_docs",dest="skip_bench_docs",action="store_true",help="Skip generation of project_benches/<bench>/docs outputs",default=False)
-    self.parser.add_option("--skip_legacy_filelists",dest="skip_legacy_filelists",action="store_true",help="Skip generated .F, .vcompile, .vinfo, .compile, and .f filelist metadata outputs",default=False)
-    self.parser.add_option("--skip_questa_scripts",dest="skip_questa_scripts",action="store_true",help="Skip generated Questa compile.do scripts",default=False)
-    self.parser.add_option("--skip_ide_metadata",dest="skip_ide_metadata",action="store_true",help="Skip generated Eclipse/SVEditor .project and .svproject metadata",default=False)
-    self.parser.add_option("--with_bench_sequences",dest="with_bench_sequences",action="store_true",help="Generate legacy bench-level virtual sequence package and example sequence tests",default=False)
 
 ## Base class for the generator types, this is where the create method is defined.
 class BaseGeneratorClass(BaseElementClass):
@@ -249,43 +239,14 @@ class BaseGeneratorClass(BaseElementClass):
     self.conditional_array = []
 
   def skipTemplateOutput(self,fname):
-    """Return True when command-line options request that this output be skipped."""
-    options = getattr(self,'options',None)
-    if options == None:
-      return False
-    target_profile = getattr(options,'target_profile','')
-    target_profile = target_profile.lower().replace('-','_')
-    vcs_xcelium_synopsys_vip = target_profile in ['vcs_xcelium_synopsys_vip']
-    minimal_output = getattr(options,'minimal_output',False) or vcs_xcelium_synopsys_vip
-    skip_bench_sim = minimal_output or getattr(options,'skip_bench_sim',False)
-    skip_bench_rtl = minimal_output or getattr(options,'skip_bench_rtl',False)
-    skip_bench_docs = minimal_output or getattr(options,'skip_bench_docs',False)
-    skip_legacy_filelists = minimal_output or getattr(options,'skip_legacy_filelists',False)
-    skip_questa_scripts = vcs_xcelium_synopsys_vip or getattr(options,'skip_questa_scripts',False)
-    skip_ide_metadata = vcs_xcelium_synopsys_vip or getattr(options,'skip_ide_metadata',False)
-    skip_bench_sequences = vcs_xcelium_synopsys_vip and not getattr(options,'with_bench_sequences',False)
+    """Return True for outputs outside the supported repository profile."""
     norm_fname = fname.replace('\\','/')
     bench_prefix = self.bench_location+'/'+self.name+'/'
-    if self.gen_type == 'bench':
-      if skip_bench_sim and norm_fname.startswith(bench_prefix+'sim/'):
-        return True
-      if skip_bench_rtl and norm_fname.startswith(bench_prefix+'rtl/'):
-        return True
-      if skip_bench_docs and norm_fname.startswith(bench_prefix+'docs/'):
-        return True
-      if skip_bench_sequences and norm_fname.startswith(bench_prefix+'tb/sequences/'):
-        return True
-      if skip_bench_sequences and os.path.splitext(os.path.basename(norm_fname))[0] in ['register_test','example_derived_test']:
-        return True
-    if skip_legacy_filelists:
-      for suffix in ['.F','.vcompile','.vinfo','.compile','.f']:
-        if norm_fname.endswith(suffix):
-          return True
-    if skip_questa_scripts and norm_fname.endswith('/compile.do'):
+    if self.gen_type == 'bench' and any(norm_fname.startswith(bench_prefix+directory+'/') for directory in ('sim','rtl','docs')):
       return True
-    if vcs_xcelium_synopsys_vip and self.isApprovedObsoleteGeneratedMakefile(norm_fname):
+    if norm_fname.endswith(('.F','.vcompile','.vinfo','.compile','.f','/compile.do')):
       return True
-    if skip_ide_metadata and os.path.basename(norm_fname) in ['.project','.svproject']:
+    if self.isApprovedObsoleteGeneratedMakefile(norm_fname):
       return True
     return False
 
@@ -496,56 +457,14 @@ class BaseGeneratorClass(BaseElementClass):
 
   def cleanupApprovedOutputs(self):
     """Remove only outputs explicitly approved as obsolete for this repository."""
-    removed_files = 0
-    removed_dirs = 0
-
+    from uvmf_yaml.obsolete import remove_obsolete_outputs
+    bench_roots = None
     if self.gen_type == 'bench':
       bench_root = os.path.join(self.root,self.bench_location,self.name)
-      obsolete_dirs = [
-        os.path.join(bench_root,'sim'),
-        os.path.join(bench_root,'rtl'),
-        os.path.join(bench_root,'docs'),
-        os.path.join(bench_root,'tb','sequences'),
-      ]
-      for path in obsolete_dirs:
-        if not self.pathIsWithinRoot(path):
-          raise UserError("Refusing cleanup outside destination root: "+path)
-        if os.path.isdir(path):
-          if self.options.quiet != True:
-            print("Removing approved obsolete directory "+path)
-          import shutil
-          shutil.rmtree(path)
-          removed_dirs += 1
-
-      obsolete_tests = [
-        os.path.join(bench_root,'tb','tests','src','register_test.svh'),
-        os.path.join(bench_root,'tb','tests','src','register_test.sv'),
-        os.path.join(bench_root,'tb','tests','src','example_derived_test.svh'),
-        os.path.join(bench_root,'tb','tests','src','example_derived_test.sv'),
-      ]
-      for path in obsolete_tests:
-        if not self.pathIsWithinRoot(path):
-          raise UserError("Refusing cleanup outside destination root: "+path)
-        if os.path.isfile(path) or os.path.islink(path):
-          if self.options.quiet != True:
-            print("Removing approved obsolete file "+path)
-          os.remove(path)
-          removed_files += 1
-
-    obsolete_suffixes = ('.F','.vcompile','.vinfo','.compile','.f')
-    obsolete_names = ('compile.do','.project','.svproject')
-    for dirpath,dirnames,filenames in os.walk(self.root):
-      for filename in filenames:
-        path = os.path.join(dirpath,filename)
-        norm_path = path.replace('\\','/')
-        if filename.endswith(obsolete_suffixes) or filename in obsolete_names or self.isApprovedObsoleteGeneratedMakefile(norm_path) or self.isApprovedObsoleteGeneratedSvh(path):
-          if self.options.quiet != True:
-            print("Removing approved obsolete file "+path)
-          os.remove(path)
-          removed_files += 1
-
-    if self.options.quiet != True:
-      print("Approved cleanup removed {0} file(s) and {1} directory tree(s)".format(removed_files,removed_dirs))
+      if not self.pathIsWithinRoot(bench_root):
+        raise UserError("Refusing cleanup outside destination root: "+bench_root)
+      bench_roots = [bench_root]
+    remove_obsolete_outputs(self.root,bench_roots,quiet=self.options.quiet == True)
 
   def writeOutputAtomically(self,full,content,isExecutable=False):
     """Commit a complete generated file without truncating an existing file first."""
@@ -589,9 +508,7 @@ class BaseGeneratorClass(BaseElementClass):
                                            "relative_vip_from_cwd": self.relative_vip_from_cwd,
                                            "relative_bench_from_cwd": self.relative_bench_from_cwd,
                                            "relative_environment_from_cwd": self.relative_environment_from_cwd,
-                                           "relative_interface_from_cwd": self.relative_interface_from_cwd,
-                                            "use_bench_sequences": (getattr(self.options,'target_profile','').lower().replace('-','_') != 'vcs_xcelium_synopsys_vip') or getattr(self.options,'with_bench_sequences',False),
-                                            "legacy_profile": getattr(self.options,'target_profile','').lower().replace('-','_') == 'legacy',
+                                            "relative_interface_from_cwd": self.relative_interface_from_cwd,
                                           })
     templateVars.update(ExtraTemplateVars)
     ## Do any necessary search/replace operations within the fname variable
@@ -913,14 +830,13 @@ class RegModelClass(BaseElementClass):
     self.regBlockInstance = regBlockInstance
 
 class analysisComponentClass(BaseElementClass):
-  def __init__(self,keyword,name,aeDict,apDict,qvipAeDict,parametersList,mtlbReady=False):
+  def __init__(self,keyword,name,aeDict,apDict,qvipAeDict,parametersList):
     super(analysisComponentClass,self).__init__(name)
     self.keyword = keyword
     self.analysisExports = []
     self.analysisPorts = []
     self.qvipAnalysisExports = []
     self.parameters = []
-    self.mtlbReady = mtlbReady
     for aeName in aeDict:
       self.analysisExports.append(AnalysisExportClass(aeName,aeDict[aeName]))
     for apName in apDict:
@@ -936,7 +852,7 @@ class analysisComponentClass(BaseElementClass):
         pass
 
 class BfmClass(BaseElementClass):
-  def __init__(self,name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName,inFactReady,portsList):
+  def __init__(self,name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName,portsList):
     super(BfmClass,self).__init__(name)
     self.ifPkg = ifPkg
     self.clk = clk
@@ -945,7 +861,6 @@ class BfmClass(BaseElementClass):
     self.sub_env_path = sub_env_path
     self.initResp = initResp
     self.agent_inst_name = agentInstName
-    self.inFactReady = inFactReady
     self.portList= []
     for portName in portsList:
       self.portList.append(portName)
@@ -1106,7 +1021,6 @@ class InterfaceClass(BaseGeneratorClass):
     self.responseList = []
     self.responseVarNames = []
     self.enableFunctionalCoverage = False
-    self.mtlbReady = False
     self.dest_dir_override = None
 
   def initTemplateVars(self,template):
@@ -1144,7 +1058,6 @@ class InterfaceClass(BaseGeneratorClass):
     template['svLibNames'] = self.svLibNames
     template['vipLibEnvVariable'] = self.vipLibEnvVariable
     template['enableFunctionalCoverage'] = self.enableFunctionalCoverage
-    template['mtlbReady'] = self.mtlbReady
     return template
 
   def addPort(self,name,width,dir,rstValue='\'b0', type='tri'):
@@ -1230,8 +1143,6 @@ class InterfaceClass(BaseGeneratorClass):
             ud = ""
             pass
           self.DPITransDecl.append(TransClass(a['name'],a['type'],False,False,ud))
-    if self.mtlbReady:
-      self.conditional_array.append('mtlbReady')
     super(InterfaceClass,self).create(desired_template,parser,archive_yaml=archive_yaml)
     if self.options.yaml:
       return
@@ -1329,7 +1240,6 @@ class EnvironmentClass(BaseGeneratorClass):
     self.uvmc_cpp_link_args = ""
     self.analysis_ports = []
     self.analysis_exports = []
-    self.mtlbReady = False
     self.dest_dir_override = None
 
   def initTemplateVars(self,template):
@@ -1382,7 +1292,6 @@ class EnvironmentClass(BaseGeneratorClass):
     template['DPILinkArgs'] = self.DPILinkArgs
     template['soName'] = self.soName
     template['svLibNames'] = self.svLibNames
-    template['mtlbReady'] = self.mtlbReady
     return template
 
   def addTypedef(self,name,type):
@@ -1473,10 +1382,10 @@ class EnvironmentClass(BaseGeneratorClass):
     """Add a constraint to the config class's Constraint item definition"""
     self.configVarsConstraints.append(ConstraintsClass(name,type,comment))
 
-  def defineAnalysisComponent(self,keyword,name,exportDict,portDict,qvipExportDict={},parametersList=[],mtlbReady=False):
+  def defineAnalysisComponent(self,keyword,name,exportDict,portDict,qvipExportDict={},parametersList=[]):
     """Defines a type of analysis component for use later on."""
     ## Register the desired analysis component on the types array
-    self.analysisComponentTypes.append(analysisComponentClass(keyword,name,exportDict,portDict,qvipExportDict,parametersList,mtlbReady))
+    self.analysisComponentTypes.append(analysisComponentClass(keyword,name,exportDict,portDict,qvipExportDict,parametersList))
     self.addAnalysisComponentType(name)
     ## Add any non-existent imp-decl calls based on contents of the aeDict
     for aeName in exportDict:
@@ -1513,8 +1422,6 @@ class EnvironmentClass(BaseGeneratorClass):
     """Environment class specific create function - allows for the production of multiple analysis component files"""
     ## Prepand the environment config typedef to the front of all util component instantiations, too
     ## Need to do this before call to super.create since these changes will be needed then
-    if self.mtlbReady:
-      self.conditional_array.append('mtlbReady')
     for ac in self.analysisComponents:
       ac.parameters = [ParameterValueClass("CONFIG_T", "CONFIG_T")] +  ac.parameters
     super(EnvironmentClass,self).create(desired_template,parser,archive_yaml=archive_yaml)
@@ -1590,7 +1497,6 @@ class BenchClass(BaseGeneratorClass):
     self.resource_parameter_names = []
     self.veloceReady = True
     self.useCoEmuClkRstGen = False
-    self.inFactEnabled = False
     self.clockHalfPeriod = '5ns'
     self.clockPhaseOffset = '9ns'
     self.resetAssertionLevel = False
@@ -1607,8 +1513,6 @@ class BenchClass(BaseGeneratorClass):
     self.regBlockInstance = env_name+"_rm"
     self.using_qvip = False
     self.using_vip = False
-    self.mtlbReady = False
-    self.useBCR = False
     self.bench_plusargs = []
     self.used_uvmf_envs = []
     self.used_qvip_envs = []
@@ -1639,7 +1543,6 @@ class BenchClass(BaseGeneratorClass):
     template['vip_pkg_env_variables'] = self.qvip_pkg_env_variables
     template['veloceReady'] = self.veloceReady
     template['useCoEmuClkRstGen'] = self.useCoEmuClkRstGen
-    template['inFactEnabled'] = self.inFactEnabled
     template['clockHalfPeriod'] = self.clockHalfPeriod
     template['clockPhaseOffset'] = self.clockPhaseOffset
     template['resetAssertionLevel'] = self.resetAssertionLevel
@@ -1658,8 +1561,6 @@ class BenchClass(BaseGeneratorClass):
     template['svLibNames'] = self.svLibNames
     template['using_qvip'] = self.using_qvip
     template['using_vip'] = self.using_vip or self.using_qvip
-    template['mtlbReady'] = self.mtlbReady
-    template['useBCR'] = self.useBCR
     template['bench_plusargs'] = self.bench_plusargs
     template['usedUvmfEnvs'] = self.used_uvmf_envs
     template['usedQvipEnvs'] = self.used_qvip_envs
@@ -1669,12 +1570,6 @@ class BenchClass(BaseGeneratorClass):
   ## Overload of the create function - insert some conditional considerations
   def create(self,desired_template='all',parser=None,archive_yaml=True):
     """Bench class specific create function - allows for the production of conditional files"""
-    if self.inFactEnabled == True:
-      self.conditional_array.append('infact_enabled')
-      if 'need_overlay' not in self.conditional_array:
-        self.conditional_array.append('need_overlay')
-    if self.mtlbReady:
-      self.conditional_array.append('mtlbReady')
     if (self.using_qvip or self.using_vip) and ('need_overlay' not in self.conditional_array):
       self.conditional_array.append('need_overlay')
     super(BenchClass,self).create(desired_template,parser,archive_yaml=archive_yaml)
@@ -1692,12 +1587,12 @@ class BenchClass(BaseGeneratorClass):
     """Add a vmap command to bench makefile"""
     self.vmaps.append(VmapClass(name,dirName))
 
-  def addBfm(self,name,ifPkg,clk,rst,activity,parametersDict={},sub_env_path='environment',initResp='INITIATOR',vipLibEnvVariable='UVMF_VIP_LIBRARY_HOME',agentInstName='agent_inst_name',inFactReady=False,portList=[]):
+  def addBfm(self,name,ifPkg,clk,rst,activity,parametersDict={},sub_env_path='environment',initResp='INITIATOR',vipLibEnvVariable='UVMF_VIP_LIBRARY_HOME',agentInstName='agent_inst_name',portList=[]):
     """Add a BFM instantiation to the definition of this bench class"""
     package_name=name+"_BFM"
     value_name=name+"_BFM"
     self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,"",""))
-    self.bfms.append(BfmClass(name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName,inFactReady,portList))
+    self.bfms.append(BfmClass(name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName,portList))
     if (ifPkg not in self.bfm_packages):
       self.bfm_packages.append(ifPkg)
       self.bfm_pkg_env_variables.append(BfmPkgClass(name,ifPkg,vipLibEnvVariable))
