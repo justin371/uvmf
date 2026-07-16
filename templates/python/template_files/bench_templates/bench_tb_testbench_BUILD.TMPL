@@ -18,13 +18,12 @@ verilog_dv_library(
     ],
     deps = [
         "@uvmf//uvmf_base_pkg:pkg",
+        # pragma uvmf custom deps_additional begin
+        # pragma uvmf custom deps_additional end
         "//hw/dv/project_benches/{{name}}/tb/parameters:pkg",
-        "//hw/dv/project_benches/{{name}}/tb/tests:tests",
-        "//hw/dv/verification_ip/environment_packages/{{env_name}}_env_pkg:pkg",
+        "//hw/dv/project_benches/{{name}}/tb/tests",
 {% for pkg in bfm_pkgs %}
         "//hw/dv/verification_ip/interface_packages/{{pkg}}_pkg:pkg",
 {% endfor %}
-        # pragma uvmf custom deps_additional begin
-        # pragma uvmf custom deps_additional end
     ],
 )

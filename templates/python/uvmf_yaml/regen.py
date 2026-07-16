@@ -19,6 +19,41 @@ class Base:
 
 class Merge(Base):
 
+  TESTBENCH_BUILD_RE = re.compile(
+    r'(?:^|[\\/])project_benches[\\/][^\\/]+[\\/]tb[\\/]testbench[\\/]BUILD$'
+  )
+  TESTS_BUILD_RE = re.compile(
+    r'(?:^|[\\/])project_benches[\\/][^\\/]+[\\/]tb[\\/]tests[\\/]BUILD$'
+  )
+  ENVIRONMENT_BUILD_RE = re.compile(
+    r'(?:^|[\\/])verification_ip[\\/]environment_packages[\\/][^\\/]+_env_pkg[\\/]BUILD$'
+  )
+  TEMPLATE_OWNED_TESTBENCH_DEP_RE = re.compile(
+    r'^\s*#?\s*"(?:'
+    r'@uvmf//uvmf_base_pkg:pkg|'
+    r'//hw/dv/project_benches/[^"/]+/tb/parameters:pkg|'
+    r'//hw/dv/project_benches/[^"/]+/tb/tests(?::tests)?|'
+    r'//hw/dv/verification_ip/environment_packages/[^"/]+_env_pkg:pkg'
+    r')",\s*(?:#.*)?$'
+  )
+  TEMPLATE_OWNED_TESTS_DEP_RE = re.compile(
+    r'^\s*#?\s*"(?:'
+    r'@uvmf//uvmf_base_pkg:pkg|'
+    r'//hw/dv/project_benches/[^"/]+/tb/parameters:pkg|'
+    r'//hw/dv/verification_ip/environment_packages/[^"/]+_env_pkg:pkg'
+    r')",\s*(?:#.*)?$'
+  )
+  TEMPLATE_OWNED_ENVIRONMENT_DEP_RE = re.compile(
+    r'^\s*#?\s*"(?:'
+    r'@uvmf//uvmf_base_pkg:pkg|'
+    r'@dv_common//cmn:pkg|'
+    r'@cluelib_pkg//:pkg|'
+    r'@svlib_pkg//:pkg|'
+    r'//hw/dv/verification_ip/interface_packages/[^"/]+_pkg:pkg|'
+    r'//hw/dv/verification_ip/environment_packages/[^"/]+_env_pkg:pkg'
+    r')",\s*(?:#.*)?$'
+  )
+
   def __init__(self,outdir,skip_missing_blocks,new_root,old_root,quiet=False):
     self.regen = Regen()
     self.copied_files = []
@@ -100,6 +135,21 @@ class Merge(Base):
         self.found_blocks[self.old_fname][-1]['end'] = 0
         pass
       old_content = self.rd[self.old_fname][label_name]['content']
+      if label_name == 'deps_additional' and self.TESTBENCH_BUILD_RE.search(self.old_fname):
+        old_content = ''.join(
+          content_line for content_line in old_content.splitlines(True)
+          if not self.TEMPLATE_OWNED_TESTBENCH_DEP_RE.match(content_line)
+        )
+      if label_name == 'deps_additional' and self.TESTS_BUILD_RE.search(self.old_fname):
+        old_content = ''.join(
+          content_line for content_line in old_content.splitlines(True)
+          if not self.TEMPLATE_OWNED_TESTS_DEP_RE.match(content_line)
+        )
+      if label_name == 'deps_additional' and self.ENVIRONMENT_BUILD_RE.search(self.old_fname):
+        old_content = ''.join(
+          content_line for content_line in old_content.splitlines(True)
+          if not self.TEMPLATE_OWNED_ENVIRONMENT_DEP_RE.match(content_line)
+        )
       # Keep defaults when upgrading from the old empty tb_attributes block.
       if label_name == 'tb_attributes' and not old_content.strip():
         self.block_copied = False

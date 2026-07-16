@@ -275,7 +275,9 @@ class SocIntegrationTest(unittest.TestCase):
       )
       ip_build_content = ip_build.read_text(encoding="utf-8")
       in_flist = ip_build_content.split("in_flist =",1)[1].split("deps =",1)[0]
-      self.assertIn('"src/ip_env_typedefs.svh"',in_flist)
+      self.assertNotIn('"src/ip_env_typedefs.svh"',in_flist)
+      self.assertNotIn('"registers/',in_flist)
+      self.assertIn('glob([\n        "*_pkg.sv",',in_flist)
       self.assertIn("pragma uvmf custom in_flist_prepend begin",in_flist)
       self.assertIn('"@dv_common//cmn:pkg"',ip_build_content)
       self.assertIn('"@cluelib_pkg//:pkg"',ip_build_content)
@@ -284,7 +286,26 @@ class SocIntegrationTest(unittest.TestCase):
         '"//hw/dv/verification_ip/environment_packages/ip_env_pkg:pkg"',
         soc_build.read_text(encoding="utf-8"),
       )
-      self.assertIn("pragma uvmf custom deps_additional begin",soc_build.read_text(encoding="utf-8"))
+      soc_build_content = soc_build.read_text(encoding="utf-8")
+      self.assertIn("pragma uvmf custom deps_additional begin",soc_build_content)
+      self.assertEqual(soc_build_content.count('"@uvmf//uvmf_base_pkg:pkg"'),1)
+      self.assertEqual(soc_build_content.count('"@dv_common//cmn:pkg"'),1)
+      self.assertEqual(soc_build_content.count('"@cluelib_pkg//:pkg"'),1)
+      self.assertEqual(soc_build_content.count('"@svlib_pkg//:pkg"'),1)
+      self.assertLess(
+        soc_build_content.index('"@svlib_pkg//:pkg"'),
+        soc_build_content.index("pragma uvmf custom deps_before_generated begin"),
+      )
+      self.assertLess(
+        soc_build_content.index("pragma uvmf custom deps_before_generated end"),
+        soc_build_content.index(
+          '"//hw/dv/verification_ip/environment_packages/ip_env_pkg:pkg"'
+        ),
+      )
+      self.assertEqual(
+        soc_build_content.count("pragma uvmf custom deps_before_generated begin"),
+        1,
+      )
       for sv_file in output.rglob("*.sv"):
         self.assertNotIn("import bus_pkg_hdl::*;",sv_file.read_text(encoding="utf-8"),str(sv_file))
 
@@ -318,8 +339,23 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertIn('exports_files(glob(["*.svh"]))',testbench_build)
       self.assertNotIn('"hdl_interconnect_macros.sv"',testbench_build)
       self.assertLess(testbench_build.index('"hdl_top.sv"'),testbench_build.index('"hvl_top.sv"'))
+      self.assertEqual(testbench_build.count('"@uvmf//uvmf_base_pkg:pkg"'),1)
+      self.assertNotIn(
+        '"//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg"',
+        testbench_build,
+      )
+      self.assertLess(
+        testbench_build.index('"@uvmf//uvmf_base_pkg:pkg"'),
+        testbench_build.index("pragma uvmf custom deps_additional begin"),
+      )
+      self.assertLess(
+        testbench_build.index("pragma uvmf custom deps_additional end"),
+        testbench_build.index('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),
+      )
+      self.assertIn('"//hw/dv/project_benches/soc/tb/tests"',testbench_build)
+      self.assertNotIn('"//hw/dv/project_benches/soc/tb/tests:tests"',testbench_build)
       tests_build = (tb / "tests" / "BUILD").read_text(encoding="utf-8")
-      self.assertIn('load(":demo_tests.bzl", "demo_test_configs")',tests_build)
+      self.assertNotIn("demo_tests",tests_build)
       self.assertIn('name = "base"',tests_build)
       self.assertNotIn('"//hw/dv/project_benches/soc/tb/testbench:tb_defines.svh"',tests_build)
       self.assertIn("pragma uvmf custom in_flist_prepend begin",tests_build)
@@ -327,11 +363,19 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertIn("pragma uvmf custom test_bzl_loads begin",tests_build)
       self.assertIn("pragma uvmf custom sim_opts begin",tests_build)
       self.assertIn("pragma uvmf custom additional_test_cfgs begin",tests_build)
-      self.assertIn("demo_test_configs()",tests_build)
+      self.assertEqual(
+        tests_build.count('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),
+        1,
+      )
+      tests_deps = tests_build.split("deps = [",1)[1].split("    ],",1)[0]
+      self.assertNotIn('"@uvmf//uvmf_base_pkg:pkg"',tests_deps)
+      self.assertNotIn("verification_ip/environment_packages",tests_deps)
+      self.assertLess(
+        tests_deps.index('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),
+        tests_deps.index("pragma uvmf custom deps_additional begin"),
+      )
       self.assertIn('tb = "//hw/dv/project_benches/soc/tb:soc_tb"',tests_build)
-      demo_tests = (tb / "tests" / "demo_tests.bzl").read_text(encoding="utf-8")
-      self.assertIn('inherits = [":base"]',demo_tests)
-      self.assertIn('uvm_testname = "test_top"',demo_tests)
+      self.assertFalse((tb / "tests" / "demo_tests.bzl").exists())
       tests_pkg = (tb / "tests" / "soc_tests_pkg.sv").read_text(encoding="utf-8")
       self.assertNotIn("import bus_pkg::*;",tests_pkg)
       self.assertNotIn("import bus_pkg_hdl::*;",tests_pkg)

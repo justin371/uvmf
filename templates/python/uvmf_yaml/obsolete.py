@@ -31,6 +31,9 @@ def find_obsolete_outputs(root,bench_roots=None):
       path = os.path.join(tests_root,filename)
       if os.path.isfile(path) or os.path.islink(path):
         obsolete_files.add(os.path.abspath(path))
+    demo_tests = os.path.join(bench_root,'tb','tests','demo_tests.bzl')
+    if os.path.isfile(demo_tests) or os.path.islink(demo_tests):
+      obsolete_files.add(os.path.abspath(demo_tests))
 
   from uvmf_gen import BaseGeneratorClass
   helper = BaseGeneratorClass('audit','audit')

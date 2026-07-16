@@ -44,6 +44,7 @@ class RegenerationSafetyTest(unittest.TestCase):
         root / "verification_ip" / "interface_packages" / "foo_pkg" / "Makefile",
         root / "verification_ip" / "environment_packages" / "bar_env_pkg" / "Makefile",
         root / ".project",
+        bench / "tb" / "tests" / "demo_tests.bzl",
       ]
       obsolete_dirs = [
         bench / "sim",
@@ -272,6 +273,184 @@ class RegenerationSafetyTest(unittest.TestCase):
 
       self.assertIn('name = "new"',old_file.read_text(encoding="utf-8"))
       self.assertIn('simulator = "VCS"',old_file.read_text(encoding="utf-8"))
+
+  def test_testbench_build_merge_keeps_only_custom_dependencies(self):
+    for env_dependency in (
+      '        "//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",\n',
+      '        #"//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",\n',
+    ):
+      with self.subTest(env_dependency=env_dependency), tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        relative = Path("project_benches") / "soc" / "tb" / "testbench" / "BUILD"
+        old_file = root / "old" / relative
+        new_file = root / "new" / relative
+        old_file.parent.mkdir(parents=True)
+        new_file.parent.mkdir(parents=True)
+        old_file.write_text(
+          "deps = [\n"
+          "        # pragma uvmf custom deps_additional begin\n"
+          "        \"@uvmf//uvmf_base_pkg:pkg\",\n"
+          "        \"@vip_vcs_svt_pkg//:pkg\",\n"
+          "        \"//hw/dv/project_benches/soc/tb/parameters:pkg\",\n"
+          "        \"//hw/dv/project_benches/soc/tb/tests:tests\",\n"
+          + env_dependency +
+          "        # pragma uvmf custom deps_additional end\n"
+          "]\n",
+          encoding="utf-8",
+        )
+        new_file.write_text(
+          "deps = [\n"
+          "        \"@uvmf//uvmf_base_pkg:pkg\",\n"
+          "        # pragma uvmf custom deps_additional begin\n"
+          "        # pragma uvmf custom deps_additional end\n"
+          "        \"//hw/dv/project_benches/soc/tb/parameters:pkg\",\n"
+          "        \"//hw/dv/project_benches/soc/tb/tests\",\n"
+          "]\n",
+          encoding="utf-8",
+        )
+
+        parser = Parse(root=str(root / "old"),quiet=True)
+        parser.parse_file(str(old_file))
+        merge = Merge(
+          outdir=str(root / "old"),skip_missing_blocks=False,
+          new_root=str(root / "new"),old_root=str(root / "old"),quiet=True,
+        )
+        merge.load_data(parser.data)
+        merge.traverse_dir(str(root / "new"))
+
+        merged = old_file.read_text(encoding="utf-8")
+        self.assertEqual(merged.count('"@uvmf//uvmf_base_pkg:pkg"'),1)
+        self.assertEqual(merged.count('"@vip_vcs_svt_pkg//:pkg"'),1)
+        self.assertEqual(merged.count('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),1)
+        self.assertEqual(merged.count('"//hw/dv/project_benches/soc/tb/tests"'),1)
+        self.assertNotIn('"//hw/dv/project_benches/soc/tb/tests:tests"',merged)
+        self.assertNotIn("//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",merged)
+        self.assertLess(
+          merged.index('"@uvmf//uvmf_base_pkg:pkg"'),
+          merged.index('"@vip_vcs_svt_pkg//:pkg"'),
+        )
+        self.assertLess(
+          merged.index('"@vip_vcs_svt_pkg//:pkg"'),
+          merged.index('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),
+        )
+
+  def test_tests_build_merge_keeps_only_custom_dependencies(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      relative = Path("project_benches") / "soc" / "tb" / "tests" / "BUILD"
+      old_file = root / "old" / relative
+      new_file = root / "new" / relative
+      old_file.parent.mkdir(parents=True)
+      new_file.parent.mkdir(parents=True)
+      old_file.write_text(
+        "deps = [\n"
+        "        # pragma uvmf custom deps_additional begin\n"
+        "        \"@uvmf//uvmf_base_pkg:pkg\",\n"
+        "        \"@vip_vcs_svt_pkg//:pkg\",\n"
+        "        \"//hw/dv/project_benches/soc/tb/parameters:pkg\",\n"
+        "        #\"//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg\",\n"
+        "        # pragma uvmf custom deps_additional end\n"
+        "]\n",
+        encoding="utf-8",
+      )
+      new_file.write_text(
+        "deps = [\n"
+        "        \"//hw/dv/project_benches/soc/tb/parameters:pkg\",\n"
+        "        # pragma uvmf custom deps_additional begin\n"
+        "        # pragma uvmf custom deps_additional end\n"
+        "]\n",
+        encoding="utf-8",
+      )
+
+      parser = Parse(root=str(root / "old"),quiet=True)
+      parser.parse_file(str(old_file))
+      merge = Merge(
+        outdir=str(root / "old"),skip_missing_blocks=False,
+        new_root=str(root / "new"),old_root=str(root / "old"),quiet=True,
+      )
+      merge.load_data(parser.data)
+      merge.traverse_dir(str(root / "new"))
+
+      merged = old_file.read_text(encoding="utf-8")
+      self.assertNotIn('"@uvmf//uvmf_base_pkg:pkg"',merged)
+      self.assertEqual(merged.count('"@vip_vcs_svt_pkg//:pkg"'),1)
+      self.assertEqual(merged.count('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),1)
+      self.assertNotIn("//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",merged)
+      self.assertLess(
+        merged.index('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),
+        merged.index('"@vip_vcs_svt_pkg//:pkg"'),
+      )
+
+  def test_environment_build_merge_keeps_only_custom_dependencies(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      relative = (
+        Path("verification_ip") / "environment_packages" /
+        "soc_env_pkg" / "BUILD"
+      )
+      old_file = root / "old" / relative
+      new_file = root / "new" / relative
+      old_file.parent.mkdir(parents=True)
+      new_file.parent.mkdir(parents=True)
+      old_file.write_text(
+        "deps = [\n"
+        "        \"@uvmf//uvmf_base_pkg:pkg\",\n"
+        "        # pragma uvmf custom deps_before_generated begin\n"
+        "        \"@early_custom//:pkg\",\n"
+        "        # pragma uvmf custom deps_before_generated end\n"
+        "        # pragma uvmf custom deps_additional begin\n"
+        "        \"@dv_common//cmn:pkg\",\n"
+        "        \"@cluelib_pkg//:pkg\",\n"
+        "        \"@svlib_pkg//:pkg\",\n"
+        "        \"@vip_vcs_svt_pkg//:pkg\",\n"
+        "        \"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg\",\n"
+        "        #\"//hw/dv/verification_ip/environment_packages/removed_env_pkg:pkg\",\n"
+        "        \"//custom/pkg:pkg\",\n"
+        "        # pragma uvmf custom deps_additional end\n"
+        "]\n",
+        encoding="utf-8",
+      )
+      new_file.write_text(
+        "deps = [\n"
+        "        \"@uvmf//uvmf_base_pkg:pkg\",\n"
+        "        \"@dv_common//cmn:pkg\",\n"
+        "        \"@cluelib_pkg//:pkg\",\n"
+        "        \"@svlib_pkg//:pkg\",\n"
+        "        # pragma uvmf custom deps_before_generated begin\n"
+        "        # pragma uvmf custom deps_before_generated end\n"
+        "        \"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg\",\n"
+        "        # pragma uvmf custom deps_additional begin\n"
+        "        # pragma uvmf custom deps_additional end\n"
+        "]\n",
+        encoding="utf-8",
+      )
+
+      parser = Parse(root=str(root / "old"),quiet=True)
+      parser.parse_file(str(old_file))
+      merge = Merge(
+        outdir=str(root / "old"),skip_missing_blocks=False,
+        new_root=str(root / "new"),old_root=str(root / "old"),quiet=True,
+      )
+      merge.load_data(parser.data)
+      merge.traverse_dir(str(root / "new"))
+
+      merged = old_file.read_text(encoding="utf-8")
+      for dependency in (
+        '"@uvmf//uvmf_base_pkg:pkg"',
+        '"@dv_common//cmn:pkg"',
+        '"@cluelib_pkg//:pkg"',
+        '"@svlib_pkg//:pkg"',
+        '"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg"',
+      ):
+        self.assertEqual(merged.count(dependency),1,dependency)
+      self.assertNotIn("removed_env_pkg:pkg",merged)
+      self.assertEqual(merged.count('"@early_custom//:pkg"'),1)
+      self.assertEqual(merged.count('"@vip_vcs_svt_pkg//:pkg"'),1)
+      self.assertEqual(merged.count('"//custom/pkg:pkg"'),1)
+      self.assertLess(
+        merged.index('"@early_custom//:pkg"'),
+        merged.index('"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg"'),
+      )
 
 
 if __name__ == "__main__":
