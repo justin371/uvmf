@@ -3,9 +3,10 @@ from uvmf_gen import UserError
 from shutil import copytree
 
 def backup(source):
+  source = os.path.abspath(os.path.normpath(source))
   count = 0
   # Check that source location exists
-  if (not os.path.exists(source)):
+  if (not os.path.isdir(source)):
     raise UserError("Backup: Source directory {0} does not exist".format(source))
   # Create name of destination. Should be "source_bak_<number>"
   # First check to see if any backups already exist by doing a listing

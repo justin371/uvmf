@@ -160,14 +160,14 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
    {{c2eConn.name}} = new("{{c2eConn.name}}",this);
 {% endfor %}
 {% for regModel in regModels %}
-// pragma uvmf custom reg_model_build_phase begin
+    // pragma uvmf custom reg_model_build_phase begin
 {% if regModel.transactionType != None %}
-  // Build register model predictor if prediction is enabled
-  if (configuration.enable_reg_prediction) begin
-    reg_predictor = new("reg_predictor", this);
-  end
+    // Build register model predictor if prediction is enabled
+    if (configuration.enable_reg_prediction) begin
+      reg_predictor = new("reg_predictor", this);
+    end
 {% endif %}
-// pragma uvmf custom reg_model_build_phase end
+    // pragma uvmf custom reg_model_build_phase end
 {% endfor %}
 
     vsqr = {{name}}_vsqr_t::type_id::create("vsqr", this);
@@ -219,11 +219,11 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     if (configuration.enable_reg_prediction ||
         configuration.enable_reg_adaptation)
 {% if regModel.vipType == "vip" %}
-  // UVMF_CHANGE_ME: VIP_AGENT_USED_FOR_REG_MAP:
-  // Uncomment the construction of the reg adapter below.  This was commented so that the
-  // generated code would compile and run as generated.  The uvm_reg_adapter is a virtual
-  // class so it can not be constructed.  Once the type is changed to a VIP reg adapter
-  // type, it must be constructed.
+      // UVMF_CHANGE_ME: VIP_AGENT_USED_FOR_REG_MAP:
+      // Uncomment the construction of the reg adapter below.  This was commented so that the
+      // generated code would compile and run as generated.  The uvm_reg_adapter is a virtual
+      // class so it can not be constructed.  Once the type is changed to a VIP reg adapter
+      // type, it must be constructed.
 {% endif %}
       {% if regModel.vipType == "vip" %}//{% endif %}reg_adapter = new("reg_adapter");
     // Set sequencer and adapter in register model map

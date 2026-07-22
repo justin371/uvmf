@@ -18,6 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
       - run: python3 scripts/run_smoke_checks.py
 
@@ -31,6 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Verify runner
         run: |
@@ -41,3 +43,5 @@ jobs:
           ssh -V
       - run: python3 scripts/run_smoke_checks.py
       - run: bazel query //...
+      - name: Build all Bazel targets
+        run: bazel build //...

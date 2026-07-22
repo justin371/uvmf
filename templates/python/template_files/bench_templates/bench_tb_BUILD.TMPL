@@ -15,7 +15,9 @@ tb_shells = [
 
 tb_defines = {
     # pragma uvmf custom tb_defines begin
+{% if simulator == "VCS" %}
     "SYNOPSYS_SV": "",
+{% endif %}
     "SVT_UVM_TECHNOLOGY": "",
     "UVM_PACKER_MAX_BYTES=": "150000",
     "UVM_DISABLE_AUTO_ITEM_RECORDING": "",
@@ -24,10 +26,16 @@ tb_defines = {
 
 tb_compile_args = [
     # pragma uvmf custom tb_compile_args begin
+{% if simulator == "VCS" %}
     "-diag env",
     "-diag vpi",
     "-timescale=1ns/1ps",
     "-top hdl_top -top hvl_top",
+{% else %}
+    "-timescale 1ns/1ps",
+    "-top hdl_top",
+    "-top hvl_top",
+{% endif %}
     # pragma uvmf custom tb_compile_args end
 ]
 
@@ -38,7 +46,9 @@ tb_runfiles = [
 
 tb_runtime_args = [
     # pragma uvmf custom tb_runtime_args begin
+{% if simulator == "VCS" %}
     "+ntb_disable_cnst_null_object_warning=1",
+{% endif %}
     # pragma uvmf custom tb_runtime_args end
 ]
 
@@ -72,7 +82,7 @@ verilog_dv_tb(
     shells = tb_shells,
     warning_waivers = tb_warning_waivers,
     deps = top_deps,
-    simulator = "VCS",
+    simulator = "{{simulator}}",
     # pragma uvmf custom tb_attributes end
 )
 

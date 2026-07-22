@@ -9,9 +9,15 @@ header-like files such as macros and typedefs remain `.svh`.
 
 ```bash
 python3 scripts/yaml2uvmf.py <yaml-files>
+python3 scripts/yaml2uvmf.py --simulator xcelium <yaml-files>
 python3 scripts/yaml2uvmf.py --check -d <existing-dv-dir> <yaml-files>
 python3 scripts/run_verible_lint.py
 ```
+
+The generated Bazel profile defaults to `--simulator vcs`. Select
+`--simulator xcelium` to emit Xcelium simulator settings and the
+`@vip_xcelium_svt_pkg//:pkg` dependency instead of VCS-only options and
+`@vip_vcs_svt_pkg//:pkg`.
 
 `--check` validates all YAML references and reports obsolete generated output
 without writing or deleting anything.
@@ -33,6 +39,11 @@ uvmf:
           type: svt_apb
           count: 6
 ```
+
+An `existing_library_component` does not create a local Bazel package. Its
+SystemVerilog package import is preserved, while a generated local Bazel
+dependency is emitted only when that package's `BUILD` file already exists.
+Add any external VIP library dependency in the generated BUILD custom block.
 
 ## Register model hierarchy
 
@@ -87,11 +98,11 @@ alternate installation can be selected with `VERIBLE_LINT` or
 
 When regenerating an existing project, omit `--overwrite` for a non-destructive
 refresh or use `--merge_source` to preserve UVMF custom blocks. Merge always
-creates a backup before updating the existing project. The `--clean` option is
-restricted to the approved obsolete outputs: bench `sim`, `rtl`, `docs`, and
-`tb/sequences` directories; legacy file-list suffixes; Questa `compile.do`;
-generated package and sim `Makefile`s; IDE metadata; and the retired example
-bench tests.
+creates a backup before updating the existing project. The `--clean` option
+removes only obsolete files that carry a UVMF generator signature, have no
+custom-block content, and match an approved legacy output kind. Unsigned files
+and entire directories are retained because their names alone do not prove
+generator ownership.
 
 Bazel `BUILD` files under useful environment and bench directories contain
 minimal `verilog_dv_library`, `verilog_dv_tb`, and `verilog_dv_test_cfg`

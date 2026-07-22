@@ -380,6 +380,43 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertNotIn("import bus_pkg::*;",tests_pkg)
       self.assertNotIn("import bus_pkg_hdl::*;",tests_pkg)
       self.assertFalse((tb / "sequences" / "BUILD").exists())
+      hvl_top = (tb / "testbench" / "hvl_top.sv").read_text(encoding="utf-8")
+      hdl_top = (tb / "testbench" / "hdl_top.sv").read_text(encoding="utf-8")
+      self.assertNotIn("cmn_tb_top.svh",hvl_top)
+      self.assertIn("run_test();",hvl_top)
+      for invalid_symbol in ("verilog_dut","vhdl_dut","vhdl_to_verilog_signal","verilog_to_vhdl_signal"):
+        self.assertNotIn(invalid_symbol,hdl_top)
+      self.assertIn("pragma uvmf custom dut_instantiation begin",hdl_top)
+
+  def test_vcs_and_xcelium_profiles_generate_simulator_specific_builds(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      config = root / "soc.yaml"
+      config.write_text(BASE_YAML,encoding="utf-8")
+      for profile,expected_simulator,expected_vip_dep in (
+        ("vcs","VCS","@vip_vcs_svt_pkg//:pkg"),
+        ("xcelium","XCELIUM","@vip_xcelium_svt_pkg//:pkg"),
+      ):
+        output = root / profile
+        result = self.run_generator(
+          config,output,"--simulator",profile,"-g","interface:bus","-g","bench:soc"
+        )
+        self.assertEqual(result.returncode,0,result.stderr)
+        tb_build = (output / "project_benches" / "soc" / "tb" / "BUILD").read_text(encoding="utf-8")
+        interface_build = (output / "verification_ip" / "interface_packages" / "bus_pkg" / "BUILD").read_text(encoding="utf-8")
+        self.assertIn('simulator = "{}"'.format(expected_simulator),tb_build)
+        self.assertIn('"{}"'.format(expected_vip_dep),interface_build)
+        if profile == "vcs":
+          self.assertIn('"SYNOPSYS_SV": ""',tb_build)
+          self.assertIn('"-diag env"',tb_build)
+          self.assertIn("+ntb_disable_cnst_null_object_warning=1",tb_build)
+          self.assertNotIn("vip_xcelium_svt_pkg",interface_build)
+        else:
+          self.assertNotIn("SYNOPSYS_SV",tb_build)
+          self.assertNotIn('"-diag env"',tb_build)
+          self.assertNotIn('"-diag vpi"',tb_build)
+          self.assertNotIn("ntb_disable_cnst_null_object_warning",tb_build)
+          self.assertNotIn("vip_vcs_svt_pkg",interface_build)
 
   def test_overwrite_existing_output_requires_merge(self):
     with tempfile.TemporaryDirectory() as tmp:
@@ -476,12 +513,12 @@ class SocIntegrationTest(unittest.TestCase):
       build.write_text(content,encoding="utf-8")
       project_file = output / "project_benches" / "soc" / "tb" / "user_owned.sv"
       project_file.write_text("module user_owned; endmodule\n",encoding="utf-8")
-      obsolete_file = output / "verification_ip" / "legacy.compile"
-      obsolete_file.parent.mkdir(parents=True,exist_ok=True)
-      obsolete_file.write_text("obsolete\n",encoding="utf-8")
-      obsolete_dir = output / "project_benches" / "soc" / "sim"
-      obsolete_dir.mkdir()
-      (obsolete_dir / "old.sv").write_text("obsolete\n",encoding="utf-8")
+      hand_file = output / "verification_ip" / "legacy.compile"
+      hand_file.parent.mkdir(parents=True,exist_ok=True)
+      hand_file.write_text("hand owned\n",encoding="utf-8")
+      hand_dir = output / "project_benches" / "soc" / "sim"
+      hand_dir.mkdir()
+      (hand_dir / "user.sv").write_text("module user; endmodule\n",encoding="utf-8")
 
       merged = self.run_generator(
         config,output,"-g","bench:soc","--merge_source="+str(output)
@@ -496,12 +533,15 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertIn('name = "custom"',tests_build.read_text(encoding="utf-8"))
       self.assertIn("custom_test_configs()",tests_build.read_text(encoding="utf-8"))
       self.assertEqual(project_file.read_text(encoding="utf-8"),"module user_owned; endmodule\n")
-      self.assertFalse(obsolete_file.exists())
-      self.assertFalse(obsolete_dir.exists())
+      self.assertEqual(hand_file.read_text(encoding="utf-8"),"hand owned\n")
+      self.assertEqual(
+        (hand_dir / "user.sv").read_text(encoding="utf-8"),
+        "module user; endmodule\n",
+      )
       backup = Path(str(output)+"_bak_0")
       self.assertTrue(backup.is_dir())
       self.assertTrue((backup / "verification_ip" / "legacy.compile").is_file())
-      self.assertTrue((backup / "project_benches" / "soc" / "sim" / "old.sv").is_file())
+      self.assertTrue((backup / "project_benches" / "soc" / "sim" / "user.sv").is_file())
       backup_build = backup / "project_benches" / "soc" / "tb" / "BUILD"
       self.assertIn("# outside custom block",backup_build.read_text(encoding="utf-8"))
 
@@ -692,6 +732,60 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertIn("svt_apb_environment apb0",content)
       self.assertNotIn("mvc_sequencer",content)
       self.assertNotIn("qvip",content.lower())
+      build = (output / "verification_ip" / "environment_packages" / "soc_env_pkg" / "BUILD").read_text(encoding="utf-8")
+      self.assertNotIn("//hw/dv/verification_ip/environment_packages/svt_apb_env_pkg:pkg",build)
+      package = (output / "verification_ip" / "environment_packages" / "soc_env_pkg" / "soc_env_pkg.sv").read_text(encoding="utf-8")
+      self.assertIn("import svt_apb_env_pkg::*;",package)
+
+  def test_existing_local_environment_keeps_its_bazel_dependency(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      config = root / "soc.yaml"
+      output = root / "output"
+      local_package = output / "verification_ip" / "environment_packages" / "svt_apb_env_pkg"
+      local_package.mkdir(parents=True)
+      (local_package / "BUILD").write_text('verilog_dv_library(name = "pkg")\n',encoding="utf-8")
+      config.write_text(
+        "uvmf:\n"
+        "  environments:\n"
+        "    svt_apb:\n"
+        "      existing_library_component: true\n"
+        "    soc:\n"
+        "      subenvs:\n"
+        "        - {name: apb0, type: svt_apb}\n",
+        encoding="utf-8",
+      )
+      result = self.run_generator(config,output,"-g","environment:soc")
+      self.assertEqual(result.returncode,0,result.stderr)
+      build = (output / "verification_ip" / "environment_packages" / "soc_env_pkg" / "BUILD").read_text(encoding="utf-8")
+      self.assertIn("//hw/dv/verification_ip/environment_packages/svt_apb_env_pkg:pkg",build)
+
+  def test_parent_environment_keeps_dependency_on_later_generated_child(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      config = root / "soc.yaml"
+      output = root / "output"
+      config.write_text(
+        "uvmf:\n"
+        "  environments:\n"
+        "    parent:\n"
+        "      subenvs:\n"
+        "        - {name: child0, type: child}\n"
+        "    child: {}\n",
+        encoding="utf-8",
+      )
+
+      result = self.run_generator(config,output)
+
+      self.assertEqual(result.returncode,0,result.stderr)
+      build = (
+        output / "verification_ip" / "environment_packages" /
+        "parent_env_pkg" / "BUILD"
+      ).read_text(encoding="utf-8")
+      self.assertIn(
+        "//hw/dv/verification_ip/environment_packages/child_env_pkg:pkg",
+        build,
+      )
 
   def test_generated_sv_has_guards_and_named_terminators(self):
     with tempfile.TemporaryDirectory() as tmp:

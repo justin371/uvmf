@@ -64,7 +64,7 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
 
   virtual task pre_start();
     // pragma uvmf custom pre_start begin
-//    get_responses();
+    // get_responses();
 {% if DPIImports|length > 0 %}
     // Example use of C functions using DPI-C
 {% for DPIImport in DPIImports %}
@@ -87,8 +87,8 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
 
   virtual task body();
     // pragma uvmf custom body begin
-  	start_item(req);
-  	finish_item(req);
+    start_item(req);
+    finish_item(req);
     // pragma uvmf custom body end
   endtask
 

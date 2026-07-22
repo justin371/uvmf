@@ -293,13 +293,22 @@ class DataClass:
       fs = open(fname)
     except IOError:
       raise UserError("Unable to open config file "+fname)
-    d = yaml.safe_load(fs)
-    fs.close()
     try:
-      if 'uvmf' not in d.keys():
-        raise UserError("Contents of "+fname+" not valid UVMF info")
-    except:
-      raise UserError("Contents of "+fname+" not valid UVMF info")
+      d = yaml.safe_load(fs)
+    finally:
+      fs.close()
+    if not isinstance(d,dict) or not isinstance(d.get('uvmf'),dict):
+      raise UserError(
+        'Contents of {0} not valid UVMF info: top-level "uvmf" must be a non-empty mapping'.format(
+          fname
+        )
+      )
+    if not d['uvmf']:
+      raise UserError(
+        'Contents of {0} not valid UVMF info: top-level "uvmf" mapping is empty'.format(
+          fname
+        )
+      )
     for raw_key in d['uvmf'].keys():
       k = self.canonicalTopLevelKey(raw_key)
       if k not in self.data.keys():
@@ -312,6 +321,12 @@ class DataClass:
         if legacy_elem is None:
           continue
         incoming = d['uvmf'][legacy_elem]
+      if not isinstance(incoming,dict) or not incoming:
+        raise UserError(
+          'Top-level section "{0}" in {1} must be a non-empty mapping'.format(
+            elem,fname
+          )
+        )
       incoming = self.normalizeBooleanValues(incoming)
       if elem in ('global','vip_library'):
         for key,value in incoming.items():
@@ -544,6 +559,16 @@ class DataClass:
   ## Generate everything from the data structures
   def buildElements(self,genarray,verify=True,build_existing=False,archive_yaml=True):
     count = 0
+    self.plannedInterfacePackages = {
+      name+'_pkg' for name,definition in self.data['interfaces'].items()
+      if self.componentRequested(genarray,'interfaces',name)
+      and (build_existing or definition.get('existing_library_component') != 'True')
+    }
+    self.plannedEnvironmentPackages = {
+      name+'_env_pkg' for name,definition in self.data['environments'].items()
+      if self.componentRequested(genarray,'environments',name)
+      and (build_existing or definition.get('existing_library_component') != 'True')
+    }
     self.interfaceDict = {}
     for interface_name in self.data['interfaces']:
       if self.componentRequested(genarray,'interfaces',interface_name):
@@ -1011,6 +1036,8 @@ class DataClass:
     valid_qsubenv_list = []
     env_has_extdef_items = False
     env = self.setupGlobalVars(env)
+    env.planned_interface_packages = set(self.plannedInterfacePackages)
+    env.planned_environment_packages = set(self.plannedEnvironmentPackages)
     ## Extract any environment-level parameters and add them
     try:
       for param in struct['parameters']:
@@ -2161,9 +2188,11 @@ def run():
     sys.tracebacklimit = 0
   if (len(args) == 0) and (options.configfile == None) and (options.rel_configfile == None) and (options.merge_source == None):
     raise UserError("No configurations or config file specified as input. Must provide one or both")
+  if options.merge_source:
+    options.merge_source = os.path.abspath(os.path.normpath(options.merge_source))
   if options.merge_source and not options.merge_debug:
     destination = os.path.abspath(os.path.normpath(options.dest_dir))
-    merge_source = os.path.abspath(os.path.normpath(options.merge_source))
+    merge_source = options.merge_source
     if destination == os.path.abspath("./uvmf_template_output"):
       options.dest_dir = options.merge_source
     elif destination != merge_source:
@@ -2214,13 +2243,14 @@ def run():
     atexit.register(merge_cleanup)
     options.dest_dir = merge_intermediate_dir
     dataObj.dest_dir_override = merge_intermediate_dir
-  elif options.merge_source != None:
+  elif options.merge_source != None and options.merge_debug and not options.check_only:
     if os.path.abspath(os.path.normpath(options.dest_dir)) == os.path.abspath(os.path.normpath(options.merge_source)):
       # Debug output must remain separate from the source being merged.
       options.dest_dir = options.dest_dir + "_tmp"
       dataObj.dest_dir_override = options.dest_dir
   if options.check_only:
-    findings = audit_output(options.dest_dir)
+    audit_root = options.merge_source if options.merge_source else options.dest_dir
+    findings = audit_output(audit_root)
     if findings:
       raise UserError("Output audit found obsolete generated content:\n  "+"\n  ".join(findings))
     if not options.quiet:
@@ -2238,23 +2268,34 @@ def run():
     old_root = parse.root
     if not options.quiet:
       print("Merging custom code in {0} with new output ...".format(options.merge_source))
-    merge = Merge(outdir=old_root,skip_missing_blocks=options.merge_skip_missing,new_root=os.path.abspath(os.path.normpath(options.dest_dir)),old_root=old_root,quiet=options.quiet)
+    merge = Merge(outdir=old_root,skip_missing_blocks=options.merge_skip_missing,new_root=os.path.abspath(os.path.normpath(options.dest_dir)),old_root=old_root,quiet=options.quiet,defer_commit=True)
     merge.load_data(parse.data)
-    merge.traverse_dir(options.dest_dir)
-    cleanup_components = list(dataObj.benchDict.values()) or list(dataObj.environmentDict.values()) or list(dataObj.interfaceDict.values())
-    bench_roots = [os.path.join(old_root,component.bench_location,component.name) for component in cleanup_components if component.gen_type == 'bench']
-    remove_obsolete_outputs(old_root,bench_roots,options.quiet)
-    if (not options.merge_debug):
-      # Remove the intermediate directory unless asked otherwise
-      if not options.quiet:
-        print("Deleting intermediate directory {0} after merging data...".format(options.dest_dir))
-      if merge_intermediate_dir == None or os.path.abspath(options.dest_dir) != os.path.abspath(merge_intermediate_dir):
-        raise UserError("Refusing to remove a directory not created as merge scratch space: {0}".format(options.dest_dir))
-      try:
-        shutil.rmtree(merge_intermediate_dir)
-        atexit.unregister(merge_cleanup)
-      except:
-        raise UserError("Unable to remove intermediate output directory {0}. Permissions issue?".format(merge_intermediate_dir))
+    cleanup_transaction = None
+    try:
+      merge.traverse_dir(options.dest_dir)
+      cleanup_components = list(dataObj.benchDict.values()) or list(dataObj.environmentDict.values()) or list(dataObj.interfaceDict.values())
+      bench_roots = [os.path.join(old_root,component.bench_location,component.name) for component in cleanup_components if component.gen_type == 'bench']
+      cleanup_transaction = remove_obsolete_outputs(
+        old_root,bench_roots,options.quiet,defer_commit=True
+      )
+      if (not options.merge_debug):
+        # Remove the intermediate directory unless asked otherwise
+        if not options.quiet:
+          print("Deleting intermediate directory {0} after merging data...".format(options.dest_dir))
+        if merge_intermediate_dir == None or os.path.abspath(options.dest_dir) != os.path.abspath(merge_intermediate_dir):
+          raise UserError("Refusing to remove a directory not created as merge scratch space: {0}".format(options.dest_dir))
+        try:
+          shutil.rmtree(merge_intermediate_dir)
+          atexit.unregister(merge_cleanup)
+        except:
+          raise UserError("Unable to remove intermediate output directory {0}. Permissions issue?".format(merge_intermediate_dir))
+      cleanup_transaction.commit()
+      merge.commit()
+    except BaseException:
+      if cleanup_transaction is not None:
+        cleanup_transaction.rollback()
+      merge.rollback()
+      raise
     if not options.quiet:
       print("Merge complete!")
       if options.merge_verbose:

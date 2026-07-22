@@ -124,10 +124,10 @@ end
 
   // ****************************************************************************
   task do_wait_for_reset();
-  // pragma uvmf custom reset_condition begin
+    // pragma uvmf custom reset_condition begin
     wait ( {{reset}}_i === {% if resetAssertionLevel %}0{% else %}1{% endif %} ) ;
     @(posedge {{clock}}_i) ;
-  // pragma uvmf custom reset_condition end
+    // pragma uvmf custom reset_condition end
   endtask
 
   //******************************************************************

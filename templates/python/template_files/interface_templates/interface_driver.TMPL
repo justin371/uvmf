@@ -36,8 +36,8 @@ class {{name}}_driver  {{macro.paramDeclare(paramDefs)|indent(6)}} extends uvmf_
   {{name}}_responder_s {{name}}_responder_struct;
 {% endif %}
 
-// pragma uvmf custom class_item_additional begin
-// pragma uvmf custom class_item_additional end
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
 // ****************************************************************************
 // This function is the standard SystemVerilog constructor.
@@ -69,7 +69,7 @@ class {{name}}_driver  {{macro.paramDeclare(paramDefs)|indent(6)}} extends uvmf_
 // ****************************************************************************
 // This task is called by the run_phase in uvmf_driver_base.
   virtual task access( inout REQ txn );
-// pragma uvmf custom access begin
+    // pragma uvmf custom access begin
     if (configuration.initiator_responder==RESPONDER) begin
       // Complete current transfer and wait for next transfer
 {% if veloceReady %}
@@ -95,7 +95,7 @@ class {{name}}_driver  {{macro.paramDeclare(paramDefs)|indent(6)}} extends uvmf_
       bfm.initiate_and_get_response( txn );
 {% endif %}
     end
-// pragma uvmf custom access end
+    // pragma uvmf custom access end
   endtask
 
 endclass

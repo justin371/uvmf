@@ -18,7 +18,11 @@ verilog_dv_library(
     ]),
     deps = [
         "@dv_common//cmn:pkg",
+{% if simulator == "VCS" %}
         "@vip_vcs_svt_pkg//:pkg",
+{% else %}
+        "@vip_xcelium_svt_pkg//:pkg",
+{% endif %}
     ],
 )
 {% endblock %}

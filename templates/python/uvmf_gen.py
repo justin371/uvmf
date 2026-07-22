@@ -228,6 +228,7 @@ class UVMFCommandLineParser:
     self.parser.add_option("-d","--dest_dir",dest="dest_dir",action="store",type="string",help="Override destination directory.  Default is \"$CWD/uvmf_template_output\"",default="./uvmf_template_output")
     self.parser.add_option("-t","--template_dir",dest="template_dir",action="store",type="string",help="Override which template directory to utilize.  Default is relative to location of uvmf_gen.py file")
     self.parser.add_option("-o","--overwrite",dest="overwrite",action="store_true",help="Overwrite existing output files (default is to skip)",default=False)
+    self.parser.add_option("--simulator",dest="simulator",action="store",type="choice",choices=("vcs","xcelium"),help="Select the Bazel simulator profile: vcs (default) or xcelium",default="vcs")
     self.parser.add_option("-b","--debug",dest="debug",action="store_true",help=SUPPRESS_HELP,default=False)
     self.parser.add_option("-y","--yaml",dest="yaml",action="store_true",help="Dump YAML file instead of generate code",default=False)
 
@@ -504,6 +505,7 @@ class BaseGeneratorClass(BaseElementClass):
                                            "interface_location": self.interface_location,
                                            "environment_location": self.environment_location,
                                            "bench_location": self.bench_location,
+                                           "simulator": self.options.simulator.upper(),
                                            "relative_vip_from_sim": self.relative_vip_from_sim,
                                            "relative_vip_from_cwd": self.relative_vip_from_cwd,
                                            "relative_bench_from_cwd": self.relative_bench_from_cwd,
@@ -511,6 +513,7 @@ class BaseGeneratorClass(BaseElementClass):
                                             "relative_interface_from_cwd": self.relative_interface_from_cwd,
                                           })
     templateVars.update(ExtraTemplateVars)
+    templateVars = self.finalizeTemplateVars(template_str,templateVars)
     ## Do any necessary search/replace operations within the fname variable
     try:
       fname = template.module.fname
@@ -597,6 +600,10 @@ class BaseGeneratorClass(BaseElementClass):
         os.makedirs(dirpath)
       content = self.normalizeGeneratedSource(fname,template.render(templateVars))
       self.writeOutputAtomically(full,content,isExecutable)
+
+  def finalizeTemplateVars(self,template_str,templateVars):
+    """Allow a generator type to specialize context for one output template."""
+    return templateVars
 
   def create(self,desired_template='all',parser=None,archive_yaml=True):
     """This exists across all generator classes and will initiate the creation of all files associated
@@ -1221,6 +1228,8 @@ class EnvironmentClass(BaseGeneratorClass):
     self.agent_packages = []
     self.qvip_agent_packages = []
     self.sub_env_packages = []
+    self.planned_interface_packages = set()
+    self.planned_environment_packages = set()
     self.qvip_sub_env_packages = []
     self.analysisComponents = []
     self.analysisComponentTypes = []
@@ -1293,6 +1302,29 @@ class EnvironmentClass(BaseGeneratorClass):
     template['soName'] = self.soName
     template['svLibNames'] = self.svLibNames
     return template
+
+  def localBazelPackageAvailable(self,location,package,planned_packages):
+    """Return true when a package exists already or will be generated in this run."""
+    return (
+      package in planned_packages
+      or os.path.isfile(os.path.join(self.root,self.vip_location,location,package,'BUILD'))
+    )
+
+  def finalizeTemplateVars(self,template_str,templateVars):
+    if template_str == 'environment_BUILD.TMPL':
+      templateVars['agent_pkgs'] = [
+        pkg for pkg in self.agent_packages
+        if self.localBazelPackageAvailable(
+          self.interface_location,pkg+'_pkg',self.planned_interface_packages
+        )
+      ]
+      templateVars['env_pkgs'] = [
+        pkg for pkg in self.sub_env_packages
+        if self.localBazelPackageAvailable(
+          self.environment_location,pkg+'_env_pkg',self.planned_environment_packages
+        )
+      ]
+    return templateVars
 
   def addTypedef(self,name,type):
     """Add a typedef to the interface class's typedefs file"""

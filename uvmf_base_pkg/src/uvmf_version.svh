@@ -35,6 +35,8 @@
 `define UVMF_MAJOR_VERSION 2023
 `define UVMF_MINOR_VERSION 4
 `define UVMF_PATCH_VERSION "_2"
+`define UVMF_UPSTREAM_VERSION "2023.4_2"
+`define UVMF_PROJECT_RELEASE "0.1.0"
 
 class uvmf_version;
   static bit b = print_version();
@@ -47,8 +49,9 @@ class uvmf_version;
   static function bit print_version();
     $display("----------------------------------------------------------------");
     $display("//  UVM Framework ");
-    $display("//  Version %0d.%0d%s", `UVMF_MAJOR_VERSION, `UVMF_MINOR_VERSION,
+    $display("//  Upstream UVMF version %0d.%0d%s", `UVMF_MAJOR_VERSION, `UVMF_MINOR_VERSION,
              `UVMF_PATCH_VERSION);
+    $display("//  Project release v%s", `UVMF_PROJECT_RELEASE);
     $display("//  (C) 2013-2024 Siemens Corporation");
     $display("//  Digital Industries Software");
     $display("//  Siemens EDA");

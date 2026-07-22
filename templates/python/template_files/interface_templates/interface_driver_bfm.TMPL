@@ -182,7 +182,7 @@ end
 {% endif %}
 
   // ****************************************************************************
-// pragma uvmf custom reset_condition_and_response begin
+  // pragma uvmf custom reset_condition_and_response begin
   // Always block used to return signals to reset value upon assertion of reset
   always @( {% if resetAssertionLevel %}posedge{% else %}negedge{% endif %} {{reset}}_i )
      begin
@@ -199,7 +199,7 @@ end
        {{sig.name}}_o <= {{sig.rstValue}};
 {% endfor %}
      end
-// pragma uvmf custom reset_condition_and_response end
+  // pragma uvmf custom reset_condition_and_response end
 
   // pragma uvmf custom interface_item_additional begin
   // pragma uvmf custom interface_item_additional end

@@ -3,18 +3,26 @@
 from pathlib import Path
 from types import SimpleNamespace
 import os
+import re
+import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0,str(REPO_ROOT / "scripts"))
 sys.path.insert(0,str(REPO_ROOT / "templates" / "python"))
 sys.path.insert(0,str(REPO_ROOT / "templates" / "python" / "python3"))
 
-from uvmf_gen import BaseGeneratorClass, UserError
+from uvmf_gen import BaseGeneratorClass, UserError, UVMFCommandLineParser
+from uvmf_yaml.backup import backup
+from uvmf_yaml.obsolete import remove_obsolete_outputs
 from uvmf_yaml.regen import Merge, Parse
+from yaml2uvmf import DataClass
 
 
 class RegenerationSafetyTest(unittest.TestCase):
@@ -25,7 +33,44 @@ class RegenerationSafetyTest(unittest.TestCase):
     generator.options = SimpleNamespace(quiet=True)
     return generator
 
-  def test_clean_removes_only_approved_outputs(self):
+  def test_template_custom_blocks_do_not_deindent_content(self):
+    pragma = re.compile(
+      r'^(\s*)(?://+|#+) pragma uvmf custom (\w+) (begin|end)'
+    )
+    template_root = (
+      REPO_ROOT / "templates" / "python" / "template_files"
+    )
+
+    for path in template_root.rglob("*.TMPL"):
+      stack = []
+      lines = path.read_text(encoding="utf-8").splitlines()
+      for line_number,line in enumerate(lines,1):
+        match = pragma.match(line)
+        if match:
+          indent = len(match.group(1))
+          label = match.group(2)
+          if match.group(3) == "begin":
+            stack.append((label,indent,line_number))
+          else:
+            self.assertTrue(stack,"Unmatched end in {}:{}".format(path,line_number))
+            begin_label,begin_indent,begin_line = stack.pop()
+            self.assertEqual(begin_label,label,"Mismatched block in {}:{}".format(path,line_number))
+            self.assertEqual(begin_indent,indent,"Mismatched marker indentation in {}:{}".format(path,line_number))
+          continue
+
+        if not stack or not line.strip() or line.lstrip().startswith(("{%","{#")):
+          continue
+        self.assertGreaterEqual(
+          len(line)-len(line.lstrip()),
+          stack[-1][1],
+          "Custom block content deindents before its marker in {}:{}".format(
+            path,line_number
+          ),
+        )
+
+      self.assertFalse(stack,"Unclosed custom block in {}".format(path))
+
+  def test_clean_requires_generator_proof_and_preserves_custom_content(self):
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
       bench = root / "project_benches" / "soc"
@@ -35,36 +80,51 @@ class RegenerationSafetyTest(unittest.TestCase):
         bench / "tb" / "custom" / "user_sequence.svh",
         root / "verification_ip" / "environment_packages" / "soc_env_pkg" / "BUILD",
         root / "verification_ip" / "custom" / "keep.sv",
-      ]
-      obsolete_files = [
         bench / "tb" / "tests" / "src" / "register_test.sv",
-        bench / "tb" / "tests" / "src" / "example_derived_test.sv",
         root / "verification_ip" / "legacy.f",
         root / "verification_ip" / "compile.do",
         root / "verification_ip" / "interface_packages" / "foo_pkg" / "Makefile",
-        root / "verification_ip" / "environment_packages" / "bar_env_pkg" / "Makefile",
         root / ".project",
         bench / "tb" / "tests" / "demo_tests.bzl",
       ]
-      obsolete_dirs = [
+      generated_obsolete = [
+        bench / "tb" / "tests" / "src" / "example_derived_test.sv",
+        root / "verification_ip" / "generated.compile",
+        root / "verification_ip" / "environment_packages" / "bar_env_pkg" / "Makefile",
+      ]
+      keep_dirs = [
         bench / "sim",
         bench / "rtl",
         bench / "docs",
         bench / "tb" / "sequences",
       ]
 
-      for path in keep_files + obsolete_files:
+      for path in keep_files:
         path.parent.mkdir(parents=True,exist_ok=True)
         path.write_text("sentinel\n",encoding="utf-8")
-      for path in obsolete_dirs:
+      for path in generated_obsolete:
+        path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_text(
+          "// Created with uvmf_gen version 2023.4_2\n",encoding="utf-8"
+        )
+      custom_generated = root / "verification_ip" / "custom.compile"
+      custom_generated.write_text(
+        "// Created with uvmf_gen version 2023.4_2\n"
+        "# pragma uvmf custom additional begin\n"
+        "hand_setting = 1\n"
+        "# pragma uvmf custom additional end\n",
+        encoding="utf-8",
+      )
+      for path in keep_dirs:
         path.mkdir(parents=True,exist_ok=True)
         (path / "old_generated_file.sv").write_text("obsolete\n",encoding="utf-8")
 
       self.make_generator(root).cleanupApprovedOutputs()
 
       self.assertTrue(all(path.is_file() for path in keep_files))
-      self.assertTrue(all(not path.exists() for path in obsolete_files))
-      self.assertTrue(all(not path.exists() for path in obsolete_dirs))
+      self.assertTrue(all(not path.exists() for path in generated_obsolete))
+      self.assertTrue(custom_generated.is_file())
+      self.assertTrue(all(path.is_dir() for path in keep_dirs))
 
   def test_atomic_output_replaces_complete_file(self):
     with tempfile.TemporaryDirectory() as tmp:
@@ -95,6 +155,37 @@ class RegenerationSafetyTest(unittest.TestCase):
       with self.assertRaises(UserError):
         generator.cleanupApprovedOutputs()
       self.assertEqual(sentinel.read_text(encoding="utf-8"),"must remain\n")
+
+  def test_cleanup_api_rejects_absolute_bench_root_outside_merge_root(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      parent = Path(tmp)
+      root = parent / "output"
+      outside = parent / "outside"
+      root.mkdir()
+      outside.mkdir()
+      sentinel = outside / "legacy.compile"
+      sentinel.write_text(
+        "// Created with uvmf_gen version 2023.4_2\n",encoding="utf-8"
+      )
+
+      with self.assertRaisesRegex(UserError,"outside merge root"):
+        remove_obsolete_outputs(str(root),[str(outside)],quiet=True)
+      self.assertTrue(sentinel.is_file())
+
+  def test_backup_with_trailing_separator_is_a_sibling(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      parent = Path(tmp)
+      source = parent / "source"
+      source.mkdir()
+      (source / "keep.txt").write_text("content\n",encoding="utf-8")
+
+      destination = Path(backup(str(source)+os.sep))
+
+      self.assertEqual(destination,parent / "source_bak_0")
+      self.assertFalse(str(destination).startswith(str(source)+os.sep))
+      self.assertEqual(
+        (destination / "keep.txt").read_text(encoding="utf-8"),"content\n"
+      )
 
   def test_default_profile_skips_only_generated_makefiles(self):
     generator = self.make_generator(Path.cwd())
@@ -192,6 +283,33 @@ class RegenerationSafetyTest(unittest.TestCase):
         "import custom_pkg::*;\n",
       )
 
+  def test_old_file_decode_error_fails_closed(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      source = Path(tmp) / "invalid.sv"
+      source.write_bytes(b"// pragma uvmf custom keep begin\n\xff\n")
+
+      parser = Parse(root=tmp,quiet=True)
+      with self.assertRaisesRegex(UserError,"Unable to decode file as text"):
+        parser.parse_file(str(source))
+
+  def test_duplicate_custom_labels_fail_closed(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      source = Path(tmp) / "duplicate.sv"
+      source.write_text(
+        "// pragma uvmf custom repeated begin\n"
+        "first\n"
+        "// pragma uvmf custom repeated end\n"
+        "// pragma uvmf custom repeated begin\n"
+        "second\n"
+        "// pragma uvmf custom repeated end\n",
+        encoding="utf-8",
+      )
+
+      parser = Parse(root=tmp,quiet=True)
+      with self.assertRaisesRegex(UserError,'Duplicate custom block label') as error:
+        parser.parse_file(str(source))
+      self.assertIn('Label: "repeated"',str(error.exception))
+
   def test_failed_directory_merge_keeps_all_original_files(self):
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
@@ -225,6 +343,100 @@ class RegenerationSafetyTest(unittest.TestCase):
       self.assertTrue(old_a.read_text(encoding="utf-8").startswith("old a\n"))
       self.assertTrue(old_z.read_text(encoding="utf-8").startswith("old z\n"))
       self.assertEqual(list(old_root.glob("*.uvmf_merge_tmp")),[])
+
+  def test_replace_failure_rolls_back_every_merged_file(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      old_root = root / "old"
+      new_root = root / "new"
+      old_root.mkdir()
+      new_root.mkdir()
+      for name in ("a.sv","b.sv"):
+        (old_root / name).write_text("old "+name+"\n",encoding="utf-8")
+        (new_root / name).write_text("new "+name+"\n",encoding="utf-8")
+
+      parser = Parse(root=str(old_root),quiet=True)
+      parser.traverse_dir(str(old_root))
+      merge = Merge(
+        outdir=str(old_root),skip_missing_blocks=False,
+        new_root=str(new_root),old_root=str(old_root),quiet=True,
+      )
+      merge.load_data(parser.data)
+      real_replace = os.replace
+      replace_count = 0
+
+      def fail_second_replace(source,destination):
+        nonlocal replace_count
+        replace_count += 1
+        if replace_count == 2:
+          raise OSError("injected replace failure")
+        return real_replace(source,destination)
+
+      with mock.patch("uvmf_yaml.regen.os.replace",side_effect=fail_second_replace):
+        with self.assertRaisesRegex(OSError,"injected replace failure"):
+          merge.traverse_dir(str(new_root))
+
+      self.assertEqual((old_root / "a.sv").read_text(encoding="utf-8"),"old a.sv\n")
+      self.assertEqual((old_root / "b.sv").read_text(encoding="utf-8"),"old b.sv\n")
+      self.assertEqual(list(root.glob(".uvmf_merge_backup_*")),[])
+
+  def test_copy_failure_leaves_no_partial_new_tree(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      old_root = root / "old"
+      new_root = root / "new"
+      old_root.mkdir()
+      (new_root / "nested").mkdir(parents=True)
+      for name in ("a.sv","b.sv"):
+        (new_root / "nested" / name).write_text(
+          "new "+name+"\n",encoding="utf-8"
+        )
+
+      merge = Merge(
+        outdir=str(old_root),skip_missing_blocks=False,
+        new_root=str(new_root),old_root=str(old_root),quiet=True,
+      )
+      merge.load_data({})
+      copy_count = 0
+
+      def fail_second_copy(source,destination):
+        nonlocal copy_count
+        copy_count += 1
+        if copy_count == 2:
+          raise OSError("injected copy failure")
+        return shutil.copyfile(source,destination)
+
+      with mock.patch("uvmf_yaml.regen.copyfile",side_effect=fail_second_copy):
+        with self.assertRaisesRegex(OSError,"injected copy failure"):
+          merge.traverse_dir(str(new_root))
+
+      self.assertFalse((old_root / "nested").exists())
+      self.assertEqual(list(old_root.rglob("*.uvmf_merge_tmp")),[])
+
+  def test_cleanup_failure_restores_every_deleted_file(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      files = [root / "a.compile",root / "b.compile"]
+      for path in files:
+        path.write_text(
+          "// Created with uvmf_gen version 2023.4_2\n",encoding="utf-8"
+        )
+      real_remove = os.remove
+      remove_count = 0
+
+      def fail_second_remove(path):
+        nonlocal remove_count
+        remove_count += 1
+        if remove_count == 2:
+          raise OSError("injected cleanup failure")
+        return real_remove(path)
+
+      with mock.patch("uvmf_yaml.obsolete.os.remove",side_effect=fail_second_remove):
+        with self.assertRaisesRegex(OSError,"injected cleanup failure"):
+          remove_obsolete_outputs(str(root),quiet=True)
+
+      self.assertTrue(all(path.is_file() for path in files))
+      self.assertEqual(list(Path(tmp).glob(".uvmf_cleanup_backup_*")),[])
 
   def test_skip_missing_block_applies_new_file(self):
     with tempfile.TemporaryDirectory() as tmp:
@@ -274,7 +486,7 @@ class RegenerationSafetyTest(unittest.TestCase):
       self.assertIn('name = "new"',old_file.read_text(encoding="utf-8"))
       self.assertIn('simulator = "VCS"',old_file.read_text(encoding="utf-8"))
 
-  def test_testbench_build_merge_keeps_only_custom_dependencies(self):
+  def test_testbench_build_merge_preserves_hand_dependencies_and_deduplicates_exact_generated_ones(self):
     for env_dependency in (
       '        "//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",\n',
       '        #"//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",\n',
@@ -323,8 +535,8 @@ class RegenerationSafetyTest(unittest.TestCase):
         self.assertEqual(merged.count('"@vip_vcs_svt_pkg//:pkg"'),1)
         self.assertEqual(merged.count('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),1)
         self.assertEqual(merged.count('"//hw/dv/project_benches/soc/tb/tests"'),1)
-        self.assertNotIn('"//hw/dv/project_benches/soc/tb/tests:tests"',merged)
-        self.assertNotIn("//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",merged)
+        self.assertIn('"//hw/dv/project_benches/soc/tb/tests:tests"',merged)
+        self.assertIn("//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",merged)
         self.assertLess(
           merged.index('"@uvmf//uvmf_base_pkg:pkg"'),
           merged.index('"@vip_vcs_svt_pkg//:pkg"'),
@@ -334,7 +546,7 @@ class RegenerationSafetyTest(unittest.TestCase):
           merged.index('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),
         )
 
-  def test_tests_build_merge_keeps_only_custom_dependencies(self):
+  def test_tests_build_merge_keeps_nonduplicated_hand_dependencies(self):
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
       relative = Path("project_benches") / "soc" / "tb" / "tests" / "BUILD"
@@ -372,16 +584,16 @@ class RegenerationSafetyTest(unittest.TestCase):
       merge.traverse_dir(str(root / "new"))
 
       merged = old_file.read_text(encoding="utf-8")
-      self.assertNotIn('"@uvmf//uvmf_base_pkg:pkg"',merged)
+      self.assertEqual(merged.count('"@uvmf//uvmf_base_pkg:pkg"'),1)
       self.assertEqual(merged.count('"@vip_vcs_svt_pkg//:pkg"'),1)
       self.assertEqual(merged.count('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),1)
-      self.assertNotIn("//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",merged)
+      self.assertIn("//hw/dv/verification_ip/environment_packages/soc_env_pkg:pkg",merged)
       self.assertLess(
         merged.index('"//hw/dv/project_benches/soc/tb/parameters:pkg"'),
         merged.index('"@vip_vcs_svt_pkg//:pkg"'),
       )
 
-  def test_environment_build_merge_keeps_only_custom_dependencies(self):
+  def test_environment_build_merge_only_deduplicates_exact_active_dependencies(self):
     with tempfile.TemporaryDirectory() as tmp:
       root = Path(tmp)
       relative = (
@@ -443,7 +655,7 @@ class RegenerationSafetyTest(unittest.TestCase):
         '"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg"',
       ):
         self.assertEqual(merged.count(dependency),1,dependency)
-      self.assertNotIn("removed_env_pkg:pkg",merged)
+      self.assertIn("removed_env_pkg:pkg",merged)
       self.assertEqual(merged.count('"@early_custom//:pkg"'),1)
       self.assertEqual(merged.count('"@vip_vcs_svt_pkg//:pkg"'),1)
       self.assertEqual(merged.count('"//custom/pkg:pkg"'),1)
@@ -451,6 +663,47 @@ class RegenerationSafetyTest(unittest.TestCase):
         merged.index('"@early_custom//:pkg"'),
         merged.index('"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg"'),
       )
+
+  def test_check_in_place_audits_merge_source(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      source = root / "source"
+      source.mkdir()
+      stale = source / "legacy.compile"
+      stale.write_text(
+        "// Created with uvmf_gen version 2023.4_2\n",encoding="utf-8"
+      )
+      config = root / "config.yaml"
+      config.write_text(
+        "uvmf:\n"
+        "  environments:\n"
+        "    soc: {}\n",
+        encoding="utf-8",
+      )
+
+      result = subprocess.run(
+        [
+          sys.executable,str(REPO_ROOT / "scripts" / "yaml2uvmf.py"),
+          "-q","--check","--merge_source="+str(source),str(config),
+        ],
+        cwd=str(root),text=True,capture_output=True,check=False,
+      )
+
+      self.assertNotEqual(result.returncode,0)
+      self.assertIn("legacy.compile",result.stdout+result.stderr)
+      self.assertTrue(stale.is_file())
+      self.assertFalse(Path(str(source)+"_tmp").exists())
+
+  def test_empty_top_level_yaml_section_is_user_error(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      config = Path(tmp) / "empty.yaml"
+      config.write_text("uvmf:\n  interfaces:\n",encoding="utf-8")
+      data = DataClass(UVMFCommandLineParser())
+
+      with self.assertRaisesRegex(
+        UserError,'Top-level section "interfaces".*non-empty mapping'
+      ):
+        data.parseFile(str(config))
 
 
 if __name__ == "__main__":
