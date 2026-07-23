@@ -9,7 +9,9 @@ verilog_dv_library(
     srcs = glob([
         "*.sv*",
         "src/**/*.sv*",
+{% if is_top_env or regModels %}
         "registers/*.sv*",
+{% endif %}
     ]),
     in_flist = [
         # pragma uvmf custom in_flist_prepend begin
@@ -20,18 +22,24 @@ verilog_dv_library(
         "src/*_intf.sv",
     ]),
     deps = [
+{% if is_top_env %}
         "@uvmf//uvmf_base_pkg:pkg",
+{% endif %}
         "@dv_common//cmn:pkg",
+{% if is_top_env %}
         "@cluelib_pkg//:pkg",
         "@svlib_pkg//:pkg",
+{% endif %}
         # pragma uvmf custom deps_before_generated begin
         # pragma uvmf custom deps_before_generated end
+{% if is_top_env %}
 {% for pkg in agent_pkgs %}
         "//hw/dv/verification_ip/interface_packages/{{pkg}}_pkg:pkg",
 {% endfor %}
 {% for pkg in env_pkgs %}
         "//hw/dv/verification_ip/environment_packages/{{pkg}}_env_pkg:pkg",
 {% endfor %}
+{% endif %}
         # pragma uvmf custom deps_additional begin
         # pragma uvmf custom deps_additional end
     ],
