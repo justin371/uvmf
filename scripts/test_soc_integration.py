@@ -382,8 +382,10 @@ class SocIntegrationTest(unittest.TestCase):
       self.assertFalse((tb / "sequences" / "BUILD").exists())
       hvl_top = (tb / "testbench" / "hvl_top.sv").read_text(encoding="utf-8")
       hdl_top = (tb / "testbench" / "hdl_top.sv").read_text(encoding="utf-8")
-      self.assertNotIn("cmn_tb_top.svh",hvl_top)
-      self.assertIn("run_test();",hvl_top)
+      self.assertIn('`include "cmn_tb_top.svh"',hvl_top)
+      self.assertIn("//   pre_run_test();",hvl_top)
+      self.assertIn("//   run_test();",hvl_top)
+      self.assertNotIn("\n    run_test();",hvl_top)
       for invalid_symbol in ("verilog_dut","vhdl_dut","vhdl_to_verilog_signal","verilog_to_vhdl_signal"):
         self.assertNotIn(invalid_symbol,hdl_top)
       self.assertIn("pragma uvmf custom dut_instantiation begin",hdl_top)
