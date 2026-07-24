@@ -1250,10 +1250,12 @@ class EnvironmentClass(BaseGeneratorClass):
     self.analysis_ports = []
     self.analysis_exports = []
     self.dest_dir_override = None
+    self.is_top_env = False
 
   def initTemplateVars(self,template):
     template['typedefs'] = self.typedefs
     template['regModels'] = self.regModels;
+    template['is_top_env'] = self.is_top_env
     template['nonUvmfComponents'] = self.nonUvmfComponents
     template['qvipMemoryAgents'] = self.qvipMemoryAgents
     template['vipMemoryAgents'] = self.qvipMemoryAgents

@@ -1027,6 +1027,10 @@ class DataClass:
 
   def generateEnvironment(self,name,build_existing=False,archive_yaml=True):
     env = EnvironmentClass(name)
+    env.is_top_env = any(
+      bench.get('top_env') == name
+      for bench in self.data.get('benches',{}).values()
+    )
     env.dest_dir_override = self.dest_dir_override
     struct = self.data['environments'][name]
     vip_agents_dot = []

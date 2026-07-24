@@ -269,24 +269,31 @@ class SocIntegrationTest(unittest.TestCase):
       bus_build_content = bus_build.read_text(encoding="utf-8")
       self.assertIn('name = "pkg"',bus_build_content)
       self.assertIn('"@vip_vcs_svt_pkg//:pkg"',bus_build_content)
-      self.assertIn(
+      self.assertNotIn(
         '"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg"',
         ip_build.read_text(encoding="utf-8"),
       )
       ip_build_content = ip_build.read_text(encoding="utf-8")
+      self.assertNotIn('"registers/*.sv*"',ip_build_content)
       in_flist = ip_build_content.split("in_flist =",1)[1].split("deps =",1)[0]
       self.assertNotIn('"src/ip_env_typedefs.svh"',in_flist)
       self.assertNotIn('"registers/',in_flist)
       self.assertIn('glob([\n        "*_pkg.sv",',in_flist)
       self.assertIn("pragma uvmf custom in_flist_prepend begin",in_flist)
-      self.assertIn('"@dv_common//cmn:pkg"',ip_build_content)
-      self.assertIn('"@cluelib_pkg//:pkg"',ip_build_content)
-      self.assertIn('"@svlib_pkg//:pkg"',ip_build_content)
+      self.assertEqual(ip_build_content.count('"@dv_common//cmn:pkg"'),1)
+      for dependency in (
+        '"@uvmf//uvmf_base_pkg:pkg"',
+        '"@cluelib_pkg//:pkg"',
+        '"@svlib_pkg//:pkg"',
+        '"//hw/dv/verification_ip/interface_packages/bus_pkg:pkg"',
+      ):
+        self.assertNotIn(dependency,ip_build_content)
       self.assertIn(
         '"//hw/dv/verification_ip/environment_packages/ip_env_pkg:pkg"',
         soc_build.read_text(encoding="utf-8"),
       )
       soc_build_content = soc_build.read_text(encoding="utf-8")
+      self.assertIn('"registers/*.sv*"',soc_build_content)
       self.assertIn("pragma uvmf custom deps_additional begin",soc_build_content)
       self.assertEqual(soc_build_content.count('"@uvmf//uvmf_base_pkg:pkg"'),1)
       self.assertEqual(soc_build_content.count('"@dv_common//cmn:pkg"'),1)
@@ -308,6 +315,41 @@ class SocIntegrationTest(unittest.TestCase):
       )
       for sv_file in output.rglob("*.sv"):
         self.assertNotIn("import bus_pkg_hdl::*;",sv_file.read_text(encoding="utf-8"),str(sv_file))
+
+  def test_subenvironment_register_model_keeps_register_sources_without_generated_deps(self):
+    with tempfile.TemporaryDirectory() as tmp:
+      root = Path(tmp)
+      config = root / "subenv.yaml"
+      output = root / "output"
+      config.write_text(
+        "uvmf:\n"
+        "  environments:\n"
+        "    ip:\n"
+        "      register_model: {}\n"
+        "    soc:\n"
+        "      subenvs:\n"
+        "        - {name: ip0, type: ip}\n"
+        "  benches:\n"
+        "    soc:\n"
+        "      top_env: soc\n",
+        encoding="utf-8",
+      )
+
+      result = self.run_generator(config,output,"-g","environment:ip")
+      self.assertEqual(result.returncode,0,result.stderr)
+      build = (
+        output / "verification_ip" / "environment_packages" /
+        "ip_env_pkg" / "BUILD"
+      ).read_text(encoding="utf-8")
+
+      self.assertIn('"registers/*.sv*"',build)
+      self.assertEqual(build.count('"@dv_common//cmn:pkg"'),1)
+      for dependency in (
+        '"@uvmf//uvmf_base_pkg:pkg"',
+        '"@cluelib_pkg//:pkg"',
+        '"@svlib_pkg//:pkg"',
+      ):
+        self.assertNotIn(dependency,build)
 
   def test_bench_generates_minimal_bazel_builds(self):
     with tempfile.TemporaryDirectory() as tmp:
@@ -383,7 +425,8 @@ class SocIntegrationTest(unittest.TestCase):
       hvl_top = (tb / "testbench" / "hvl_top.sv").read_text(encoding="utf-8")
       hdl_top = (tb / "testbench" / "hdl_top.sv").read_text(encoding="utf-8")
       self.assertIn('`include "cmn_tb_top.svh"',hvl_top)
-      self.assertIn("//   pre_run_test();",hvl_top)
+      self.assertIn("function pre_run_test();",hvl_top)
+      self.assertEqual(hvl_top.count("pre_run_test()"),1)
       self.assertIn("//   run_test();",hvl_top)
       self.assertNotIn("\n    run_test();",hvl_top)
       for invalid_symbol in ("verilog_dut","vhdl_dut","vhdl_to_verilog_signal","verilog_to_vhdl_signal"):
@@ -754,7 +797,10 @@ class SocIntegrationTest(unittest.TestCase):
         "      existing_library_component: true\n"
         "    soc:\n"
         "      subenvs:\n"
-        "        - {name: apb0, type: svt_apb}\n",
+        "        - {name: apb0, type: svt_apb}\n"
+        "  benches:\n"
+        "    soc:\n"
+        "      top_env: soc\n",
         encoding="utf-8",
       )
       result = self.run_generator(config,output,"-g","environment:soc")
@@ -773,7 +819,10 @@ class SocIntegrationTest(unittest.TestCase):
         "    parent:\n"
         "      subenvs:\n"
         "        - {name: child0, type: child}\n"
-        "    child: {}\n",
+        "    child: {}\n"
+        "  benches:\n"
+        "    parent:\n"
+        "      top_env: parent\n",
         encoding="utf-8",
       )
 
