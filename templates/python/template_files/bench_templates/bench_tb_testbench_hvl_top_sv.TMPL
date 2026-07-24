@@ -32,8 +32,7 @@ module hvl_top;
 
 {% endfor %}
 
-  function bit pre_run_test();
-    pre_run_test = 1'b0;
+  function pre_run_test();
   // pragma uvmf custom pre_run_test begin
   // pragma uvmf custom pre_run_test end
   endfunction : pre_run_test
@@ -42,7 +41,6 @@ module hvl_top;
 
   // initial begin
   //   $timeformat(-9,3,"ns",5);
-  //   pre_run_test();
   //   run_test();
   // end
 

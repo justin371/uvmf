@@ -425,9 +425,8 @@ class SocIntegrationTest(unittest.TestCase):
       hvl_top = (tb / "testbench" / "hvl_top.sv").read_text(encoding="utf-8")
       hdl_top = (tb / "testbench" / "hdl_top.sv").read_text(encoding="utf-8")
       self.assertIn('`include "cmn_tb_top.svh"',hvl_top)
-      self.assertIn("function bit pre_run_test();",hvl_top)
-      self.assertIn("pre_run_test = 1'b0;",hvl_top)
-      self.assertIn("//   pre_run_test();",hvl_top)
+      self.assertIn("function pre_run_test();",hvl_top)
+      self.assertEqual(hvl_top.count("pre_run_test()"),1)
       self.assertIn("//   run_test();",hvl_top)
       self.assertNotIn("\n    run_test();",hvl_top)
       for invalid_symbol in ("verilog_dut","vhdl_dut","vhdl_to_verilog_signal","verilog_to_vhdl_signal"):
