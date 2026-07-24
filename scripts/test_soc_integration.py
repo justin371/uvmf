@@ -425,6 +425,7 @@ class SocIntegrationTest(unittest.TestCase):
       hvl_top = (tb / "testbench" / "hvl_top.sv").read_text(encoding="utf-8")
       hdl_top = (tb / "testbench" / "hdl_top.sv").read_text(encoding="utf-8")
       self.assertIn('`include "cmn_tb_top.svh"',hvl_top)
+      self.assertIn("function void pre_run_test();",hvl_top)
       self.assertIn("//   pre_run_test();",hvl_top)
       self.assertIn("//   run_test();",hvl_top)
       self.assertNotIn("\n    run_test();",hvl_top)
@@ -796,7 +797,10 @@ class SocIntegrationTest(unittest.TestCase):
         "      existing_library_component: true\n"
         "    soc:\n"
         "      subenvs:\n"
-        "        - {name: apb0, type: svt_apb}\n",
+        "        - {name: apb0, type: svt_apb}\n"
+        "  benches:\n"
+        "    soc:\n"
+        "      top_env: soc\n",
         encoding="utf-8",
       )
       result = self.run_generator(config,output,"-g","environment:soc")
@@ -815,7 +819,10 @@ class SocIntegrationTest(unittest.TestCase):
         "    parent:\n"
         "      subenvs:\n"
         "        - {name: child0, type: child}\n"
-        "    child: {}\n",
+        "    child: {}\n"
+        "  benches:\n"
+        "    parent:\n"
+        "      top_env: parent\n",
         encoding="utf-8",
       )
 
