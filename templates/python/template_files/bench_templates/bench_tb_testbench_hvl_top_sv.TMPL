@@ -32,7 +32,8 @@ module hvl_top;
 
 {% endfor %}
 
-  function void pre_run_test();
+  function bit pre_run_test();
+    pre_run_test = 1'b0;
   // pragma uvmf custom pre_run_test begin
   // pragma uvmf custom pre_run_test end
   endfunction : pre_run_test
